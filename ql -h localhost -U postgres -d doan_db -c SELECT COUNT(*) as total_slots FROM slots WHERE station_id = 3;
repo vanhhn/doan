@@ -1,0 +1,4 @@
+ slot_number | battery_uid | is_battery_present | status | battery_status | charge_level 
+-------------+-------------+--------------------+--------+----------------+--------------
+(0 rows)
+
