@@ -101,6 +101,7 @@ async function main() {
     for (let i = 0; i < data.count; i++) {
       const battery = await prisma.battery.create({
         data: {
+          uid: `UID-${batteryCode}`,
           batteryCode: `BAT${String(batteryCode).padStart(3, "0")}`,
           stationId: data.stationId,
           slotId: data.slotId + i,
