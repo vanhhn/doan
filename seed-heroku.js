@@ -20,19 +20,27 @@ async function main() {
 
   console.log("✅ Cleared existing data");
 
-  // Create test user
-  const hashedPassword = await bcrypt.hash("password123", 10);
-  const customer = await prisma.customer.create({
-    data: {
-      username: "testlogin",
-      passwordHash: hashedPassword,
-      fullName: "Test User",
-      email: "test@evswap.com",
-      phone: "0123456789",
-      balance: 500000,
-    },
-  });
-  console.log("✅ Created test user");
+  // Create test user (skip if exists)
+  let customer;
+  try {
+    const hashedPassword = await bcrypt.hash("password123", 10);
+    customer = await prisma.customer.create({
+      data: {
+        username: "testlogin",
+        passwordHash: hashedPassword,
+        fullName: "Test User",
+        email: "test@evswap.com",
+        phone: "0123456789",
+        balance: 500000,
+      },
+    });
+    console.log("✅ Created test user");
+  } catch (e) {
+    console.log("⚠️  User testlogin already exists, skipping...");
+    customer = await prisma.customer.findUnique({
+      where: { username: "testlogin" },
+    });
+  }
 
   // Create stations
   const stations = [
