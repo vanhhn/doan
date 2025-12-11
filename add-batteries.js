@@ -17,22 +17,18 @@ async function main() {
     for (let i = 0; i < data.count; i++) {
       const uid = `UID-${batteryCode}`;
       const code = `BAT${String(batteryCode).padStart(3, "0")}`;
-      
+
       // Check if battery already exists
       const existing = await prisma.battery.findUnique({
         where: { uid: uid },
       });
-      
+
       if (!existing) {
         await prisma.battery.create({
           data: {
             uid: uid,
-            batteryCode: code,
-            stationId: data.stationId,
-            slotId: data.slotId + i,
             status: "full",
             chargeLevel: 100,
-            health: 100,
             chargeCycles: 0,
           },
         });
@@ -76,7 +72,11 @@ async function main() {
       },
     });
 
-    console.log(`✅ Updated station ${stationId}: ${totalSlots - fullSlots}/${totalSlots} available slots`);
+    console.log(
+      `✅ Updated station ${stationId}: ${
+        totalSlots - fullSlots
+      }/${totalSlots} available slots`
+    );
   }
 
   console.log("🎉 Batteries added successfully!");
