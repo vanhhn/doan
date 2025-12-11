@@ -13,7 +13,10 @@ exports.uploadAvatar = async (req, res) => {
       });
     }
 
-    const avatarUrl = `/uploads/${req.file.filename}`;
+    // Use full URL for Heroku deployment
+    const baseUrl =
+      process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+    const avatarUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
     const customer = await prisma.customer.update({
       where: { id: customerId },
