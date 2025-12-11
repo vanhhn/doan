@@ -6,13 +6,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting database seed...");
 
-  // Clear existing data
-  await prisma.payment.deleteMany();
-  await prisma.transaction.deleteMany();
-  await prisma.battery.deleteMany();
-  await prisma.slot.deleteMany();
-  await prisma.station.deleteMany();
-  await prisma.customer.deleteMany();
+  // Clear existing data (safe to skip if tables don't exist yet)
+  try {
+    await prisma.payment.deleteMany();
+    await prisma.transaction.deleteMany();
+    await prisma.battery.deleteMany();
+    await prisma.slot.deleteMany();
+    await prisma.station.deleteMany();
+    await prisma.customer.deleteMany();
+  } catch (e) {
+    console.log("⚠️  Some tables not found, continuing...", e.message);
+  }
 
   console.log("✅ Cleared existing data");
 
