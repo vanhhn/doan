@@ -11,10 +11,10 @@ const MOMO_CONFIG = {
     "https://test-payment.momo.vn/v2/gateway/api/create",
   returnUrl:
     process.env.MOMO_RETURN_URL ||
-    "https://gwyn-electrosurgical-stochastically.ngrok-free.dev/api/payment/momo/return",
+    "https://ev-swap-backend-2025-b268b8b1f366.herokuapp.com/api/payment/momo/return",
   notifyUrl:
     process.env.MOMO_NOTIFY_URL ||
-    "https://gwyn-electrosurgical-stochastically.ngrok-free.dev/api/payment/momo/callback",
+    "https://ev-swap-backend-2025-b268b8b1f366.herokuapp.com/api/payment/momo/callback",
 };
 
 // Tạo signature cho MoMo request
