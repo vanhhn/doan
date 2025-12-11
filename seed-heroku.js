@@ -25,7 +25,7 @@ async function main() {
   const customer = await prisma.customer.create({
     data: {
       username: "testlogin",
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       fullName: "Test User",
       email: "test@evswap.com",
       phone: "0123456789",
@@ -83,7 +83,9 @@ async function main() {
       });
     }
 
-    console.log(`✅ Created station: ${station.name} with ${station.totalSlots} slots`);
+    console.log(
+      `✅ Created station: ${station.name} with ${station.totalSlots} slots`
+    );
   }
 
   // Create batteries
