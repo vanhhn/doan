@@ -1,5 +1,15 @@
 const prisma = require("../config/database");
 const path = require("path");
+const cloudinary = require("cloudinary").v2;
+const fs = require("fs");
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dsx4yvfnl",
+  api_key: process.env.CLOUDINARY_API_KEY || "738582261875474",
+  api_secret:
+    process.env.CLOUDINARY_API_SECRET || "oKG4a8umlR7XBI8Gcgald0taOXw",
+});
 
 // Upload avatar
 exports.uploadAvatar = async (req, res) => {
@@ -13,10 +23,18 @@ exports.uploadAvatar = async (req, res) => {
       });
     }
 
-    // Use full URL for Heroku deployment
-    const baseUrl =
-      process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
-    const avatarUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "ev-swap/avatars",
+      public_id: `user-${customerId}-${Date.now()}`,
+      overwrite: true,
+      resource_type: "image",
+    });
+
+    // Delete local file after upload
+    fs.unlinkSync(req.file.path);
+
+    const avatarUrl = result.secure_url;
 
     const customer = await prisma.customer.update({
       where: { id: customerId },
@@ -35,6 +53,10 @@ exports.uploadAvatar = async (req, res) => {
     });
   } catch (error) {
     console.error("Upload avatar error:", error);
+    // Clean up file if exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     res.status(500).json({
       success: false,
       message: "Lỗi server khi upload ảnh.",
