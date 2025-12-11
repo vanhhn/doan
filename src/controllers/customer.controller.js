@@ -5,7 +5,7 @@ const fs = require("fs");
 
 // Configure Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dsx4yvfnl",
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dex4yvfnl",
   api_key: process.env.CLOUDINARY_API_KEY || "738582261875474",
   api_secret:
     process.env.CLOUDINARY_API_SECRET || "okG4a8umlR7XB18Gcgald0taOXw",
