@@ -39,7 +39,7 @@ const ReservationScreen: React.FC = () => {
   const handleReserve = async (stationId: number, stationName: string) => {
     showAlert(
       "Xác nhận đặt trước",
-      `Bạn muốn đặt chỗ tại ${stationName}?\n\nThời gian giữ chỗ: 15 phút`,
+      `Bạn muốn đặt chỗ tại ${stationName}?\n\nThời gian giữ chỗ: 30 phút`,
       [
         {
           text: "Hủy",
@@ -56,7 +56,7 @@ const ReservationScreen: React.FC = () => {
               if (response.success) {
                 showAlert(
                   "Thành công",
-                  `${response.message}\n\nVui lòng đến trạm trong vòng 15 phút để quét QR.`
+                  `${response.message}\n\nVui lòng đến trạm trong vòng 30 phút để quét QR.`
                 );
               } else {
                 showAlert("Lỗi", response.message || "Không thể đặt chỗ");
@@ -156,7 +156,7 @@ const ReservationScreen: React.FC = () => {
           Đặt trước pin
         </Text>
         <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-          Chọn trạm để đặt chỗ trước 15 phút
+          Chọn trạm để đặt chỗ trước 30 phút
         </Text>
       </View>
 

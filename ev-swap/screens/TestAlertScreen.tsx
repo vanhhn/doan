@@ -32,7 +32,7 @@ const TestAlertScreen: React.FC = () => {
           onPress={() =>
             showAlert(
               "Thành công",
-              "Đặt chỗ thành công! Vui lòng đến trạm trong vòng 15 phút."
+              "Đặt chỗ thành công! Vui lòng đến trạm trong vòng 30 phút."
             )
           }
         >
