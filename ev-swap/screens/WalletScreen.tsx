@@ -91,7 +91,8 @@ const WalletTransactionItem: React.FC<WalletTransactionItemProps> = ({
           },
         ]}
       >
-        {transaction.amount > 0 ? "+" : ""}${transaction.amount.toFixed(2)}
+        {transaction.amount > 0 ? "+" : ""}
+        {Math.abs(transaction.amount).toLocaleString("vi-VN")}đ
       </Text>
     </View>
   );
