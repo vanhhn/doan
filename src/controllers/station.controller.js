@@ -33,7 +33,7 @@ exports.getAllStations = async (req, res) => {
         (slot) =>
           slot.status === "full" &&
           slot.isBatteryPresent &&
-          slot.chargeLevel >= 80
+          (slot.chargeLevel === null || slot.chargeLevel >= 80)
       ).length;
 
       return {
@@ -252,7 +252,10 @@ exports.getStationStats = async (req, res) => {
       availableSlots: station.availableSlots,
       occupiedSlots: station.totalSlots - station.availableSlots,
       fullBatteries: station.slots.filter(
-        (slot) => slot.status === "full" && slot.battery?.chargeLevel >= 80
+        (slot) =>
+          slot.status === "full" &&
+          slot.isBatteryPresent &&
+          (!slot.battery?.chargeLevel || slot.battery?.chargeLevel >= 80)
       ).length,
       chargingBatteries: station.slots.filter(
         (slot) => slot.status === "charging"
