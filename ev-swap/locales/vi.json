@@ -8,7 +8,7 @@
   "login": {
     "welcome": "Chào mừng trở lại!",
     "subtitle": "Đăng nhập vào tài khoản của bạn",
-    "phoneOrCard": "Số điện thoại hoặc ID thẻ",
+    "phoneOrCard": "Tên đăng nhập",
     "password": "Mật khẩu",
     "loginButton": "Đăng nhập",
     "loggingIn": "Đang đăng nhập...",

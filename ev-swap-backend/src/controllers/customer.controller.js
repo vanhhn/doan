@@ -191,9 +191,9 @@ exports.getHistory = async (req, res) => {
 
     // Lấy lịch sử nạp tiền
     const payments = await prisma.payment.findMany({
-      where: { 
+      where: {
         customerId,
-        status: "completed" // Chỉ lấy giao dịch thành công
+        status: "completed", // Chỉ lấy giao dịch thành công
       },
       orderBy: {
         completedAt: "desc",
@@ -202,7 +202,7 @@ exports.getHistory = async (req, res) => {
 
     // Gộp và sắp xếp theo thời gian
     const allActivities = [
-      ...swapTransactions.map(tx => ({
+      ...swapTransactions.map((tx) => ({
         type: "swap",
         date: tx.transactionTime,
         amount: -tx.cost, // Âm vì là chi tiêu
@@ -210,7 +210,7 @@ exports.getHistory = async (req, res) => {
         stationName: tx.station.name,
         cost: tx.cost,
       })),
-      ...payments.map(pm => ({
+      ...payments.map((pm) => ({
         type: "topup",
         date: pm.completedAt,
         amount: pm.amount, // Dương vì là nạp tiền

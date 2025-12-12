@@ -53,14 +53,13 @@ export interface Station {
 }
 
 export interface Transaction {
-  id: number;
-  stationName: string;
-  oldBatteryUid: string | null;
-  newBatteryUid: string | null;
-  status: string;
-  transactionTime: string;
-  completedTime: string | null;
+  type: "swap" | "topup";
+  date: string;
+  amount: number;
+  description: string;
+  stationName?: string;
   cost?: number;
+  paymentMethod?: string;
 }
 
 export interface SlotInfo {

@@ -60,18 +60,17 @@ const HistoryScreen: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
-        data={transactions.map((transaction) => {
-          const date = new Date(transaction.transactionTime);
+        data={transactions.map((transaction, index) => {
+          const date = new Date(transaction.date);
           return {
-            id: transaction.id.toString(),
-            stationName:
-              transaction.station?.name || `Trạm ${transaction.stationId}`,
+            id: `${transaction.type}-${index}`,
+            stationName: transaction.stationName || transaction.description,
             date: date.toLocaleDateString("vi-VN"),
             time: date.toLocaleTimeString("vi-VN", {
               hour: "2-digit",
               minute: "2-digit",
             }),
-            cost: transaction.cost || 7000,
+            cost: Math.abs(transaction.amount),
           };
         })}
         renderItem={({ item }) => <HistoryItem transaction={item} />}
