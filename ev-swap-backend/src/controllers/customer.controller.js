@@ -162,7 +162,8 @@ exports.getHistory = async (req, res) => {
     const customerId = req.user.id;
     const { limit = 20, offset = 0 } = req.query;
 
-    const transactions = await prisma.transactionLog.findMany({
+    // Lấy lịch sử đổi pin
+    const swapTransactions = await prisma.transactionLog.findMany({
       where: { customerId },
       include: {
         station: {
@@ -186,20 +187,50 @@ exports.getHistory = async (req, res) => {
       orderBy: {
         transactionTime: "desc",
       },
-      take: parseInt(limit),
-      skip: parseInt(offset),
     });
 
-    const total = await prisma.transactionLog.count({
-      where: { customerId },
+    // Lấy lịch sử nạp tiền
+    const payments = await prisma.payment.findMany({
+      where: { 
+        customerId,
+        status: "completed" // Chỉ lấy giao dịch thành công
+      },
+      orderBy: {
+        completedAt: "desc",
+      },
     });
+
+    // Gộp và sắp xếp theo thời gian
+    const allActivities = [
+      ...swapTransactions.map(tx => ({
+        type: "swap",
+        date: tx.transactionTime,
+        amount: -tx.cost, // Âm vì là chi tiêu
+        description: `Đổi pin tại ${tx.station.name}`,
+        stationName: tx.station.name,
+        cost: tx.cost,
+      })),
+      ...payments.map(pm => ({
+        type: "topup",
+        date: pm.completedAt,
+        amount: pm.amount, // Dương vì là nạp tiền
+        description: `Nạp tiền qua ${pm.paymentMethod.toUpperCase()}`,
+        paymentMethod: pm.paymentMethod,
+      })),
+    ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // Phân trang
+    const paginatedActivities = allActivities.slice(
+      parseInt(offset),
+      parseInt(offset) + parseInt(limit)
+    );
 
     res.json({
       success: true,
       data: {
-        transactions,
+        transactions: paginatedActivities,
         pagination: {
-          total,
+          total: allActivities.length,
           limit: parseInt(limit),
           offset: parseInt(offset),
         },
