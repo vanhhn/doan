@@ -205,7 +205,9 @@ const WalletScreen = () => {
                     t("common.success"),
                     t("common.topupSuccessDetails", {
                       amount: amountValue.toLocaleString(),
-                      balance: completeResponse.data?.balance?.toLocaleString() || currentBalance.toLocaleString(),
+                      balance:
+                        completeResponse.data?.balance?.toLocaleString() ||
+                        currentBalance.toLocaleString(),
                     })
                   );
                 }
@@ -361,7 +363,10 @@ const WalletScreen = () => {
             <FlatList
               data={transactions.map((t, index) => ({
                 id: `${t.type}-${index}`,
-                type: t.type === "swap" ? "Payment" as const : "Top Up" as const,
+                type:
+                  t.type === "swap"
+                    ? ("Payment" as const)
+                    : ("Top Up" as const),
                 date: new Date(t.date).toLocaleDateString("vi-VN"),
                 amount: t.amount,
               }))}

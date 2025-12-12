@@ -32,6 +32,7 @@ const SignUpScreen: React.FC = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     phoneNumber: "",
+    email: "",
     cardId: "",
     password: "",
     confirmPassword: "",
@@ -49,10 +50,17 @@ const SignUpScreen: React.FC = () => {
     setError("");
     setIsLoading(true);
 
-    const { fullName, phoneNumber, cardId, password, confirmPassword } =
+    const { fullName, phoneNumber, email, cardId, password, confirmPassword } =
       formData;
 
-    if (!fullName || !phoneNumber || !cardId || !password || !confirmPassword) {
+    if (
+      !fullName ||
+      !phoneNumber ||
+      !email ||
+      !cardId ||
+      !password ||
+      !confirmPassword
+    ) {
       setError(t("signup.errorFieldsRequired"));
       setIsLoading(false);
       return;
@@ -70,7 +78,7 @@ const SignUpScreen: React.FC = () => {
         password: password,
         fullName: fullName,
         phone: phoneNumber,
-        email: `${cardId}@evswap.vn`, // Email tự động
+        email: email,
       });
 
       if (response.success) {
@@ -152,6 +160,25 @@ const SignUpScreen: React.FC = () => {
             onChangeText={(value) => handleInputChange("phoneNumber", value)}
             keyboardType="phone-pad"
             autoCapitalize="none"
+          />
+
+          {/* Email Input */}
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+                color: colors.text,
+              },
+            ]}
+            placeholder={t("personalInfo.email")}
+            placeholderTextColor={colors.textSecondary}
+            value={formData.email}
+            onChangeText={(value) => handleInputChange("email", value)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
 
           {/* Card ID Input */}
