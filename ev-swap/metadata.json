@@ -1,0 +1,5 @@
+{
+  "name": "EV Swap",
+  "description": "A web application simulating an EV battery swapping service, inspired by a mobile app design. It includes features for viewing battery status, finding stations, managing a wallet, and viewing account details.",
+  "requestFramePermissions": []
+}
