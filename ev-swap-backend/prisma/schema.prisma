@@ -61,6 +61,7 @@ model Customer {
   transactionLogs  TransactionLog[]
   feedbacks        Feedback[]
   reservations     Reservation[]
+  payments         Payment[]
 
   @@map("customers")
 }
@@ -199,6 +200,8 @@ model Payment {
   errorMessage    String?  @map("error_message") @db.Text
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
   completedAt     DateTime? @map("completed_at") @db.Timestamptz()
+
+  customer        Customer @relation(fields: [customerId], references: [id])
 
   @@map("payments")
 }

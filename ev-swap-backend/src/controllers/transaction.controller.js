@@ -122,8 +122,8 @@ exports.startSwap = async (req, res) => {
       availableSlot = station.slots.find(
         (slot) =>
           slot.battery &&
-          (slot.battery.status === "full" ||
-            slot.battery.status === "in_stock") &&
+          (slot.battery.status === "in_stock" ||
+            slot.battery.status === "in_use") &&
           !reservedByOthers.includes(slot.batteryUid)
       );
     }
