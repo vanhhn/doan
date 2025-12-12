@@ -135,7 +135,7 @@ exports.createReservation = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: `Đặt chỗ thành công tại ${reservation.station.name}. Vui lòng đến trạm trong vòng 15 phút.`,
+      message: `Đặt chỗ thành công tại ${reservation.station.name}. Vui lòng đến trạm trong vòng 30 phút.`,
       data: {
         reservationId: reservation.id,
         stationName: reservation.station.name,
@@ -143,6 +143,8 @@ exports.createReservation = async (req, res) => {
         batteryUid: reservation.batteryUid,
         slotNumber: availableSlot.slotNumber,
         expiresAt: reservation.expiresAt,
+        reservedTime: reservation.reservedTime,
+        durationMinutes: 30,
         createdAt: reservation.createdAt,
       },
     });
