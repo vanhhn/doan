@@ -14,7 +14,7 @@ model Station {
   id               Int      @id @default(autoincrement())
   name             String   @unique @db.VarChar(100)
   location         String?  @db.VarChar(255)
-  status           String   @default("inactive") @db.VarChar(50) // active, inactive, maintenance, low_battery, out_of_battery
+  status           String   @default("inactive") @db.VarChar(50) // active, inactive, maintenance, out_of_battery
   totalSlots       Int      @default(6) @map("total_slots")
   availableSlots   Int      @default(6) @map("available_slots")
   lastMaintenance  DateTime? @map("last_maintenance") @db.Timestamptz()
@@ -30,8 +30,7 @@ model Station {
 
 model Battery {
   uid              String   @id @db.VarChar(50)
-  status           String   @default("available") @db.VarChar(50) // full, charging, in_use, maintenance, good, average
-  chargeLevel      Int      @default(100) @map("charge_level")
+  status           String   @default("in_stock") @db.VarChar(50) // full, charging, in_use, maintenance
   chargeCycles     Int      @default(0) @map("charge_cycles")
   lastCharged      DateTime? @map("last_charged") @db.Timestamptz()
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz()
@@ -74,7 +73,6 @@ model Slot {
   isBatteryPresent   Boolean  @default(false) @map("is_battery_present")
   isLocked           Boolean  @default(false) @map("is_locked")
   batteryUid         String?  @map("battery_uid") @db.VarChar(50)
-  chargeLevel        Int?     @map("charge_level")
   lastUpdated        DateTime @default(now()) @map("last_updated") @db.Timestamptz()
 
   station            Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
@@ -102,12 +100,12 @@ model TransactionLog {
   id              Int      @id @default(autoincrement())
   customerId      Int      @map("customer_id")
   stationId       Int      @map("station_id")
-  requestType     String   @default("swap") @map("request_type") @db.VarChar(50)
+  requestType     String   @default("swap") @map("request_type") @db.VarChar(50) // swap, return
   oldBatteryUid   String?  @map("old_battery_uid") @db.VarChar(50)
   slotIn          Int?     @map("slot_in")
   newBatteryUid   String?  @map("new_battery_uid") @db.VarChar(50)
   slotOut         Int?     @map("slot_out")
-  cost            Float    @default(5000) @db.DoublePrecision
+  cost            Float    @default(7000) @db.DoublePrecision
   transactionTime DateTime @default(now()) @map("transaction_time") @db.Timestamptz()
   completedTime   DateTime? @map("completed_time") @db.Timestamptz()
   status          String   @default("pending") @db.VarChar(50)
@@ -176,6 +174,7 @@ model Reservation {
   customerId      Int      @map("customer_id")
   stationId       Int      @map("station_id")
   reservedTime    DateTime @map("reserved_time") @db.Timestamptz()
+  expiresAt       DateTime @map("expires_at") @db.Timestamptz()
   status          String   @default("pending") @db.VarChar(50) // pending, confirmed, completed, cancelled, expired
   batteryUid      String?  @map("battery_uid") @db.VarChar(50)
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()

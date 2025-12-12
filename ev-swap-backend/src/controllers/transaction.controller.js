@@ -26,7 +26,7 @@ exports.startSwap = async (req, res) => {
 
     console.log(
       reservationCheck.hasReservation
-        ? "✅ Khách hàng có reservation"
+        ? `✅ Khách hàng có reservation - Ưu tiên pin ${reservationCheck.reservation.batteryUid}`
         : "ℹ️ Khách hàng không có reservation"
     );
 
@@ -78,12 +78,51 @@ exports.startSwap = async (req, res) => {
       });
     }
 
-    // Tìm slot có pin đầy (status = full hoặc available)
-    const availableSlot = station.slots.find(
-      (slot) =>
-        slot.battery &&
-        (slot.battery.status === "full" || slot.battery.status === "available")
-    );
+    // Ưu tiên slot có pin đã được đặt trước (nếu có reservation)
+    let availableSlot;
+    if (reservationCheck.hasReservation) {
+      const reservedBatteryUid = reservationCheck.reservation.batteryUid;
+      availableSlot = station.slots.find(
+        (slot) => slot.batteryUid === reservedBatteryUid
+      );
+
+      if (!availableSlot) {
+        console.log("⚠️ Pin đã đặt không còn available, tìm pin khác");
+      } else {
+        console.log(
+          `🔋 Sử dụng pin đã đặt: ${reservedBatteryUid} tại slot ${availableSlot.slotNumber}`
+        );
+      }
+    }
+
+    // Nếu không có reservation hoặc pin đã đặt không available, tìm pin khác
+    if (!availableSlot) {
+      // Lấy danh sách pin đã được reserved bởi người khác
+      const otherReservations = await prisma.reservation.findMany({
+        where: {
+          stationId: parseInt(stationId),
+          status: "pending",
+          customerId: {
+            not: customerId,
+          },
+        },
+        select: {
+          batteryUid: true,
+        },
+      });
+
+      const reservedByOthers = otherReservations.map((r) => r.batteryUid);
+      console.log("🔒 Pin đã được đặt bởi người khác:", reservedByOthers);
+
+      // Tìm slot có pin đầy và không bị reserved bởi người khác
+      availableSlot = station.slots.find(
+        (slot) =>
+          slot.battery &&
+          (slot.battery.status === "full" ||
+            slot.battery.status === "in_stock") &&
+          !reservedByOthers.includes(slot.batteryUid)
+      );
+    }
 
     if (!availableSlot) {
       return res.status(400).json({
@@ -167,7 +206,6 @@ exports.startSwap = async (req, res) => {
         newBattery: {
           select: {
             uid: true,
-            chargeLevel: true,
           },
         },
       },
@@ -236,6 +274,19 @@ exports.startSwap = async (req, res) => {
     console.log(
       `📦 Slot ${availableSlot.slotNumber} đã được làm trống, available_slots giảm 1`
     );
+
+    // Nếu có reservation, cập nhật status thành "completed"
+    if (reservationCheck.hasReservation) {
+      await prisma.reservation.update({
+        where: { id: reservationCheck.reservation.id },
+        data: {
+          status: "completed",
+        },
+      });
+      console.log(
+        `✅ Reservation #${reservationCheck.reservation.id} đã hoàn thành`
+      );
+    }
 
     res.status(201).json({
       success: true,
@@ -376,7 +427,6 @@ exports.confirmSwap = async (req, res) => {
           isBatteryPresent: false,
           isLocked: true,
           batteryUid: null,
-          chargeLevel: null,
         },
       });
     }
@@ -392,7 +442,6 @@ exports.confirmSwap = async (req, res) => {
           status: "charging",
           isBatteryPresent: true,
           batteryUid: oldBatteryUid,
-          chargeLevel: 20, // Giả sử pin cũ có 20% charge
         },
       });
 
@@ -401,7 +450,6 @@ exports.confirmSwap = async (req, res) => {
         where: { uid: oldBatteryUid },
         data: {
           status: "charging",
-          chargeLevel: 20,
         },
       });
     }
@@ -508,13 +556,11 @@ exports.getTransactionStatus = async (req, res) => {
         oldBattery: {
           select: {
             uid: true,
-            chargeLevel: true,
           },
         },
         newBattery: {
           select: {
             uid: true,
-            chargeLevel: true,
           },
         },
       },

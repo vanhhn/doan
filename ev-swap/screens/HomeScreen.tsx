@@ -125,8 +125,8 @@ const HomeScreen: React.FC = () => {
     setRefreshing(false);
   }, [refetch]);
 
-  // Tính toán % pin từ thông tin user
-  const batteryPercentage = profile?.currentBattery?.chargeLevel || 85;
+  // Tính toán % pin từ thông tin user (mặc định 85%)
+  const batteryPercentage = 85;
   const estimatedRange = Math.round(batteryPercentage * 0.85); // Ước tính km
 
   const actions = [

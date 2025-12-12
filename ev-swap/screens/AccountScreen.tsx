@@ -91,7 +91,9 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ onLogout }) => {
           <Image
             source={{
               uri: profile?.avatarUrl
-                ? `${API_BASE_URL}${profile.avatarUrl}`
+                ? profile.avatarUrl.startsWith("http")
+                  ? profile.avatarUrl
+                  : `${API_BASE_URL}${profile.avatarUrl}`
                 : `https://i.pravatar.cc/100?u=${user?.username || "default"}`,
             }}
             style={styles.avatar}

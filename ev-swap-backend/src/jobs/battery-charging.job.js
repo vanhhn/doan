@@ -23,13 +23,12 @@ const updateChargingBatteries = async () => {
       `🔋 Tìm thấy ${batteries.length} pin đã sạc xong, đang cập nhật...`
     );
 
-    // Cập nhật tất cả pin sang status "full" và chargeLevel = 100
+    // Cập nhật tất cả pin sang status "full"
     const updatePromises = batteries.map((battery) =>
       prisma.battery.update({
         where: { uid: battery.uid },
         data: {
           status: "full",
-          chargeLevel: 100,
           chargeCycles: {
             increment: 1,
           },

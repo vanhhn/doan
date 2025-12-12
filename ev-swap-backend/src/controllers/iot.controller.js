@@ -35,7 +35,6 @@ exports.validateBattery = async (req, res) => {
       data: {
         uid: battery.uid,
         status: battery.status,
-        chargeLevel: battery.chargeLevel,
         chargeCycles: battery.chargeCycles,
       },
       message: isValid
@@ -55,8 +54,7 @@ exports.validateBattery = async (req, res) => {
 // Cập nhật trạng thái slot
 exports.updateSlotStatus = async (req, res) => {
   try {
-    const { station_id, slot_number, status, battery_uid, charge_level } =
-      req.body;
+    const { station_id, slot_number, status, battery_uid } = req.body;
 
     // Validate input
     if (!station_id || !slot_number || !status) {
@@ -88,7 +86,6 @@ exports.updateSlotStatus = async (req, res) => {
         status,
         batteryUid: battery_uid || null,
         isBatteryPresent: !!battery_uid,
-        chargeLevel: charge_level || null,
         isLocked: status === "full" || status === "charging",
         lastUpdated: new Date(),
       },
@@ -99,7 +96,6 @@ exports.updateSlotStatus = async (req, res) => {
       await prisma.battery.update({
         where: { uid: battery_uid },
         data: {
-          chargeLevel: charge_level || 0,
           status:
             status === "full"
               ? "good"

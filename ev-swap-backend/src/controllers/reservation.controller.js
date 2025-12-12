@@ -62,7 +62,36 @@ exports.createReservation = async (req, res) => {
 
     // Tạo reservation mới (thời gian đặt = 15 phút từ bây giờ)
     const reservedTime = new Date();
-    reservedTime.setMinutes(reservedTime.getMinutes() + 15);
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // Hết hạn sau 15 phút
+
+    // Tìm pin available để đặt trước
+    const availableSlot = await prisma.slot.findFirst({
+      where: {
+        stationId: parseInt(stationId),
+        status: "full",
+        isBatteryPresent: true,
+        batteryUid: {
+          not: null,
+        },
+      },
+      include: {
+        battery: {
+          select: {
+            uid: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (!availableSlot) {
+      console.log("❌ No available battery found");
+      return res.status(400).json({
+        success: false,
+        message: "Trạm hiện không có pin sẵn sàng để đặt trước.",
+      });
+    }
 
     console.log("✨ Creating reservation...");
     const reservation = await prisma.reservation.create({
@@ -70,13 +99,22 @@ exports.createReservation = async (req, res) => {
         customerId,
         stationId: parseInt(stationId),
         reservedTime,
+        expiresAt,
         status: "pending",
+        batteryUid: availableSlot.batteryUid,
       },
       include: {
         customer: {
           select: {
             id: true,
             fullName: true,
+          },
+        },
+        station: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
           },
         },
       },
@@ -97,8 +135,16 @@ exports.createReservation = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: `Đặt chỗ thành công tại ${station.name}. Vui lòng đến trạm trong vòng 15 phút.`,
-      data: reservation,
+      message: `Đặt chỗ thành công tại ${reservation.station.name}. Vui lòng đến trạm trong vòng 15 phút.`,
+      data: {
+        reservationId: reservation.id,
+        stationName: reservation.station.name,
+        stationLocation: reservation.station.location,
+        batteryUid: reservation.batteryUid,
+        slotNumber: availableSlot.slotNumber,
+        expiresAt: reservation.expiresAt,
+        createdAt: reservation.createdAt,
+      },
     });
   } catch (error) {
     console.error("❌ Create reservation error:", error);
@@ -115,18 +161,84 @@ exports.createReservation = async (req, res) => {
 exports.getMyReservations = async (req, res) => {
   try {
     const customerId = req.user.id;
+    const { includeExpired } = req.query;
+
+    const whereClause = { customerId };
+
+    // Nếu không include expired, chỉ lấy các status còn active
+    if (includeExpired !== "true") {
+      whereClause.status = {
+        in: ["pending", "confirmed", "completed"],
+      };
+    }
 
     const reservations = await prisma.reservation.findMany({
-      where: { customerId },
+      where: whereClause,
+      include: {
+        station: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: "desc",
       },
-      take: 10,
+      take: 20,
     });
+
+    // Tìm slot number cho mỗi reservation
+    const reservationsWithSlot = await Promise.all(
+      reservations.map(async (reservation) => {
+        if (reservation.batteryUid) {
+          const slot = await prisma.slot.findFirst({
+            where: {
+              stationId: reservation.stationId,
+              batteryUid: reservation.batteryUid,
+            },
+            select: {
+              slotNumber: true,
+            },
+          });
+
+          return {
+            id: reservation.id,
+            stationName: reservation.station.name,
+            stationLocation: reservation.station.location,
+            batteryUid: reservation.batteryUid,
+            slotNumber: slot?.slotNumber || null,
+            status: reservation.status,
+            expiresAt: reservation.expiresAt,
+            createdAt: reservation.createdAt,
+          };
+        }
+
+        return {
+          id: reservation.id,
+          stationName: reservation.station.name,
+          stationLocation: reservation.station.location,
+          batteryUid: null,
+          slotNumber: null,
+          status: reservation.status,
+          expiresAt: reservation.expiresAt,
+          createdAt: reservation.createdAt,
+        };
+      })
+    );
 
     res.json({
       success: true,
-      data: reservations,
+      message: "Lấy danh sách đặt pin thành công",
+      data: {
+        customer: {
+          id: req.user.id,
+          username: req.user.username,
+          fullName: req.user.fullName,
+        },
+        reservations: reservationsWithSlot,
+      },
     });
   } catch (error) {
     console.error("Get reservations error:", error);
@@ -213,7 +325,7 @@ exports.checkReservation = async (customerId, stationId) => {
     if (reservation) {
       // Kiểm tra xem đã hết hạn chưa
       const now = new Date();
-      if (now > reservation.reservedTime) {
+      if (now > reservation.expiresAt) {
         // Hết hạn - cập nhật status và hoàn lại slot
         await prisma.reservation.update({
           where: { id: reservation.id },
@@ -234,12 +346,7 @@ exports.checkReservation = async (customerId, stationId) => {
         return { hasReservation: false, expired: true };
       }
 
-      // Còn hạn - cập nhật thành confirmed (không tăng slot vì đang sử dụng)
-      await prisma.reservation.update({
-        where: { id: reservation.id },
-        data: { status: "confirmed" },
-      });
-
+      // Còn hạn - trả về reservation để ưu tiên pin
       return { hasReservation: true, reservation };
     }
 
@@ -247,5 +354,85 @@ exports.checkReservation = async (customerId, stationId) => {
   } catch (error) {
     console.error("Check reservation error:", error);
     return { hasReservation: false, error: error.message };
+  }
+};
+
+// Xem pin available tại station
+exports.getAvailableBatteries = async (req, res) => {
+  try {
+    const { stationId } = req.params;
+
+    const station = await prisma.station.findUnique({
+      where: { id: parseInt(stationId) },
+      include: {
+        slots: {
+          where: {
+            status: "full",
+            isBatteryPresent: true,
+          },
+          include: {
+            battery: {
+              select: {
+                uid: true,
+                status: true,
+              },
+            },
+          },
+          orderBy: {
+            slotNumber: "asc",
+          },
+        },
+      },
+    });
+
+    if (!station) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy trạm sạc.",
+      });
+    }
+
+    // Kiểm tra các slot nào đã được reserved
+    const reservedBatteries = await prisma.reservation.findMany({
+      where: {
+        stationId: parseInt(stationId),
+        status: "pending",
+      },
+      select: {
+        batteryUid: true,
+      },
+    });
+
+    const reservedUids = reservedBatteries.map((r) => r.batteryUid);
+
+    const batteries = station.slots.map((slot) => ({
+      slotNumber: slot.slotNumber,
+      batteryUid: slot.batteryUid,
+      batteryStatus: slot.battery?.status || "unknown",
+      isReserved: reservedUids.includes(slot.batteryUid),
+    }));
+
+    res.json({
+      success: true,
+      message: "Lấy danh sách pin thành công",
+      data: {
+        station: {
+          id: station.id,
+          name: station.name,
+          location: station.location,
+          totalSlots: station.totalSlots,
+          availableSlots: station.availableSlots,
+          reservedSlots: reservedUids.length,
+        },
+        batteries,
+      },
+    });
+  } catch (error) {
+    console.error("Get available batteries error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy danh sách pin.",
+      error: error.message,
+    });
   }
 };

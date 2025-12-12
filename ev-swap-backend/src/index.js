@@ -13,6 +13,7 @@ const reservationRoutes = require("./routes/reservation.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const { startBatteryChargingJob } = require("./jobs/battery-charging.job");
+const { startCleanupScheduler } = require("./jobs/reservation-cleanup.job");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -68,6 +69,9 @@ app.listen(PORT, "0.0.0.0", () => {
 
   // Khởi động job tự động cập nhật pin sạc
   startBatteryChargingJob();
+
+  // Khởi động job tự động hết hạn đặt pin
+  startCleanupScheduler();
 });
 
 module.exports = app;

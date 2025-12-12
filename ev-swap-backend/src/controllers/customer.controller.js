@@ -129,7 +129,6 @@ exports.getProfile = async (req, res) => {
           select: {
             uid: true,
             status: true,
-            chargeLevel: true,
             chargeCycles: true,
           },
         },
@@ -176,13 +175,11 @@ exports.getHistory = async (req, res) => {
         oldBattery: {
           select: {
             uid: true,
-            chargeLevel: true,
           },
         },
         newBattery: {
           select: {
             uid: true,
-            chargeLevel: true,
           },
         },
       },

@@ -70,7 +70,6 @@ export interface SlotInfo {
   isBatteryPresent: boolean;
   isLocked: boolean;
   batteryUid: string | null;
-  chargeLevel: number | null;
 }
 
 export interface StationDetails extends Station {

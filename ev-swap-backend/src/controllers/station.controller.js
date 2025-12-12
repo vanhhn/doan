@@ -18,7 +18,6 @@ exports.getAllStations = async (req, res) => {
             slotNumber: true,
             status: true,
             isBatteryPresent: true,
-            chargeLevel: true,
           },
         },
       },
@@ -30,10 +29,7 @@ exports.getAllStations = async (req, res) => {
     // Tính toán số lượng pin đầy (sẵn sàng sử dụng)
     const stationsWithAvailableBatteries = stations.map((station) => {
       const fullBatteries = station.slots.filter(
-        (slot) =>
-          slot.status === "full" &&
-          slot.isBatteryPresent &&
-          (slot.chargeLevel === null || slot.chargeLevel >= 80)
+        (slot) => slot.status === "full" && slot.isBatteryPresent
       ).length;
 
       return {
@@ -70,7 +66,6 @@ exports.getStationById = async (req, res) => {
               select: {
                 uid: true,
                 status: true,
-                chargeLevel: true,
                 chargeCycles: true,
                 lastCharged: true,
               },
@@ -252,10 +247,7 @@ exports.getStationStats = async (req, res) => {
       availableSlots: station.availableSlots,
       occupiedSlots: station.totalSlots - station.availableSlots,
       fullBatteries: station.slots.filter(
-        (slot) =>
-          slot.status === "full" &&
-          slot.isBatteryPresent &&
-          (!slot.battery?.chargeLevel || slot.battery?.chargeLevel >= 80)
+        (slot) => slot.status === "full" && slot.isBatteryPresent
       ).length,
       chargingBatteries: station.slots.filter(
         (slot) => slot.status === "charging"
