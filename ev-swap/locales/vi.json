@@ -85,13 +85,41 @@
     "error": "Lỗi",
     "success": "Thành công",
     "warning": "Cảnh báo",
-    "info": "Thông tin"
+    "info": "Thông tin",
+    "notification": "Thông báo",
+    "processing": "Đang xử lý...",
+    "uploading": "Đang tải...",
+    "changePhoto": "Đổi ảnh",
+    "takePhoto": "Chụp ảnh",
+    "chooseFromLibrary": "Chọn từ thư viện",
+    "chooseAvatar": "Chọn ảnh đại diện",
+    "invalidAmount": "Vui lòng nhập số tiền hợp lệ",
+    "minAmount": "Số tiền nạp tối thiểu là 10,000đ",
+    "selectPaymentMethod": "Vui lòng chọn phương thức thanh toán",
+    "withdrawNotAvailable": "Chức năng rút tiền chưa khả dụng",
+    "paymentUrlError": "Không nhận được URL thanh toán từ MoMo",
+    "momoPaymentError": "Không thể tạo thanh toán MoMo",
+    "momoPaymentGeneralError": "Có lỗi xảy ra khi tạo thanh toán MoMo",
+    "topupError": "Không thể nạp tiền",
+    "topupGeneralError": "Có lỗi xảy ra khi nạp tiền",
+    "topupSuccess": "Nạp tiền thành công!",
+    "topupSuccessDetails": "Đã nạp {amount} vào tài khoản!\\nSố dư mới: {balance}",
+    "paymentFailed": "Thanh toán không thành công. Vui lòng thử lại.",
+    "cancelPayment": "Hủy thanh toán?",
+    "cancelPaymentConfirm": "Bạn có chắc muốn hủy giao dịch này?",
+    "direction": "Dẫn đường",
+    "directionTo": "Bạn muốn đi đến {name}?",
+    "openGoogleMaps": "Mở Google Maps",
+    "invalidQRCode": "QR code không hợp lệ",
+    "transactionError": "Có lỗi xảy ra khi thực hiện giao dịch"
   },
   "modals": {
     "reserve": {
       "title": "Xác nhận Đặt chỗ",
       "body": "Bạn có muốn đặt trước một cục pin tại {station} không?",
-      "success": "Đặt chỗ thành công!"
+      "success": "Đặt chỗ thành công!",
+      "error": "Không thể đặt chỗ",
+      "generalError": "Có lỗi xảy ra khi đặt chỗ"
     },
     "topup": {
       "title": "Nạp tiền vào Ví"
@@ -132,7 +160,15 @@
     "phone": "Số điện thoại",
     "memberSince": "Thành viên từ",
     "editButton": "Chỉnh sửa thông tin",
-    "saveButton": "Lưu thay đổi"
+    "saveButton": "Lưu thay đổi",
+    "updateSuccess": "Cập nhật thông tin thành công!",
+    "updateError": "Không thể cập nhật thông tin",
+    "updateGeneralError": "Có lỗi xảy ra khi cập nhật thông tin",
+    "avatarSaved": "Ảnh đại diện đã được lưu!",
+    "uploadError": "Lỗi upload",
+    "uploadTimeout": "Upload timeout. Vui lòng thử lại.",
+    "networkError": "Lỗi kết nối mạng. Kiểm tra kết nối và thử lại.",
+    "uploadGeneralError": "Có lỗi xảy ra khi upload ảnh"
   },
   "settings": {
     "notifications": "Thông báo",
