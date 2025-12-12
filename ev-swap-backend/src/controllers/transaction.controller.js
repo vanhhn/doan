@@ -97,13 +97,17 @@ exports.startSwap = async (req, res) => {
 
     // Nếu không có reservation hoặc pin đã đặt không available, tìm pin khác
     if (!availableSlot) {
-      // Lấy danh sách pin đã được reserved bởi người khác
+      // Lấy danh sách pin đã được reserved bởi người khác (chưa hết hạn)
+      const now = new Date();
       const otherReservations = await prisma.reservation.findMany({
         where: {
           stationId: parseInt(stationId),
           status: "pending",
           customerId: {
             not: customerId,
+          },
+          expiresAt: {
+            gt: now, // Chỉ lấy reservation chưa hết hạn
           },
         },
         select: {
