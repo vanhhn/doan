@@ -60,10 +60,10 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // Tạo reservation mới (thời gian đặt = 15 phút từ bây giờ)
+    // Tạo reservation mới (thời gian đặt = 30 phút từ bây giờ)
     const reservedTime = new Date();
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // Hết hạn sau 15 phút
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30); // Hết hạn sau 30 phút
 
     // Tìm pin available để đặt trước
     const availableSlot = await prisma.slot.findFirst({

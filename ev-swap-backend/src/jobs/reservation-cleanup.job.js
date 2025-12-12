@@ -2,6 +2,7 @@ const prisma = require("../config/database");
 
 /**
  * Cleanup job để tự động expire các reservations hết hạn
+ * Reservation hết hạn sau 30 phút nếu không được sử dụng
  * Chạy định kỳ mỗi 1-5 phút
  */
 exports.cleanupExpiredReservations = async () => {
