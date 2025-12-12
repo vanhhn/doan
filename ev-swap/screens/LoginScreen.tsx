@@ -85,7 +85,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   };
 
   const handleForgotPassword = () => {
-    showAlert("", t("login.forgotPasswordMessage"));
+    navigation.navigate("ForgotPassword");
   };
 
   return (

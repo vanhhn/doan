@@ -8,4 +8,7 @@ router.post("/register", authController.register);
 // POST /api/auth/login - Đăng nhập
 router.post("/login", authController.login);
 
+// POST /api/auth/reset-password - Đặt lại mật khẩu
+router.post("/reset-password", authController.resetPassword);
+
 module.exports = router;

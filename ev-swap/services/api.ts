@@ -363,6 +363,16 @@ export const authAPI = {
   login: (credentials: Parameters<typeof apiClient.login>[0]) =>
     apiClient.login(credentials),
   logout: () => apiClient.logout(),
+  resetPassword: async (data: {
+    phone: string;
+    newPassword: string;
+  }): Promise<ApiResponse<void>> => {
+    return apiClient.request("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+      requiresAuth: false,
+    });
+  },
 };
 
 export const customerAPI = {

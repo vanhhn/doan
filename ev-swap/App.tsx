@@ -9,6 +9,7 @@ import { RootStackParamList } from "./navigation.types";
 import MainLayout from "./components/MainLayout";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
+import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
 import StationDetailsScreen from "./screens/StationDetailsScreen";
 import HelpScreen from "./screens/HelpScreen";
 import HistoryScreen from "./screens/HistoryScreen";
@@ -64,6 +65,7 @@ const AppNavigator: React.FC = () => {
               {() => <LoginScreen onLogin={handleLogin} />}
             </Stack.Screen>
             <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="NetworkTest" component={NetworkTestScreen} />
             <Stack.Screen name="LoginTest" component={LoginTestScreen} />
           </>

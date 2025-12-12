@@ -180,3 +180,59 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+// Reset mật khẩu (Forgot Password)
+exports.resetPassword = async (req, res) => {
+  try {
+    const { phone, newPassword } = req.body;
+
+    // Validate input
+    if (!phone || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Số điện thoại và mật khẩu mới là bắt buộc.",
+      });
+    }
+
+    // Kiểm tra độ dài mật khẩu
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu phải có ít nhất 6 ký tự.",
+      });
+    }
+
+    // Tìm user theo số điện thoại
+    const customer = await prisma.customer.findUnique({
+      where: { phone },
+    });
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy tài khoản với số điện thoại này.",
+      });
+    }
+
+    // Hash mật khẩu mới
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Cập nhật mật khẩu
+    await prisma.customer.update({
+      where: { phone },
+      data: { passwordHash },
+    });
+
+    res.json({
+      success: true,
+      message: "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay.",
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi đặt lại mật khẩu.",
+      error: error.message,
+    });
+  }
+};
