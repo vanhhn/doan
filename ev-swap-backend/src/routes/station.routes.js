@@ -12,6 +12,9 @@ router.get("/nearby", stationController.getNearbyStations);
 // GET /api/stations/:id - Lấy thông tin chi tiết một trạm
 router.get("/:id", stationController.getStationById);
 
+// GET /api/stations/:id/batteries - Lấy danh sách pin available tại trạm
+router.get("/:id/batteries", stationController.getAvailableBatteries);
+
 // GET /api/stations/:id/stats - Lấy thống kê trạm
 router.get("/:id/stats", stationController.getStationStats);
 

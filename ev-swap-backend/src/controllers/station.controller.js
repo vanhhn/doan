@@ -280,3 +280,122 @@ exports.getStationStats = async (req, res) => {
     });
   }
 };
+
+// Lấy danh sách pin available tại trạm (bao gồm trạng thái reservation)
+exports.getAvailableBatteries = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const station = await prisma.station.findUnique({
+      where: { id: parseInt(id) },
+      select: {
+        id: true,
+        name: true,
+        location: true,
+        status: true,
+        availableSlots: true,
+      },
+    });
+
+    if (!station) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy trạm.",
+      });
+    }
+
+    // Lấy tất cả slot có pin đầy
+    const fullSlots = await prisma.slot.findMany({
+      where: {
+        stationId: parseInt(id),
+        status: "full",
+        isBatteryPresent: true,
+        batteryUid: {
+          not: null,
+        },
+      },
+      include: {
+        battery: {
+          select: {
+            uid: true,
+            status: true,
+            chargeCycles: true,
+            lastCharged: true,
+          },
+        },
+      },
+      orderBy: {
+        slotNumber: "asc",
+      },
+    });
+
+    // Lấy các reservation đang active
+    const now = new Date();
+    const activeReservations = await prisma.reservation.findMany({
+      where: {
+        stationId: parseInt(id),
+        status: "pending",
+        expiresAt: {
+          gt: now,
+        },
+      },
+      select: {
+        batteryUid: true,
+        customer: {
+          select: {
+            fullName: true,
+          },
+        },
+        expiresAt: true,
+      },
+    });
+
+    // Map batteryUid -> reservation info
+    const reservationMap = {};
+    activeReservations.forEach((res) => {
+      reservationMap[res.batteryUid] = {
+        isReserved: true,
+        reservedBy: res.customer.fullName,
+        expiresAt: res.expiresAt,
+      };
+    });
+
+    // Gắn thông tin reservation vào từng pin
+    const batteries = fullSlots.map((slot) => ({
+      slotNumber: slot.slotNumber,
+      batteryUid: slot.batteryUid,
+      batteryStatus: slot.battery?.status || "unknown",
+      chargeCycles: slot.battery?.chargeCycles || 0,
+      lastCharged: slot.battery?.lastCharged,
+      isReserved: reservationMap[slot.batteryUid]?.isReserved || false,
+      reservedBy: reservationMap[slot.batteryUid]?.reservedBy || null,
+      expiresAt: reservationMap[slot.batteryUid]?.expiresAt || null,
+    }));
+
+    // Đếm số pin reserved
+    const reservedCount = batteries.filter((b) => b.isReserved).length;
+
+    res.json({
+      success: true,
+      message: "Lấy danh sách pin thành công.",
+      data: {
+        station: {
+          id: station.id,
+          name: station.name,
+          location: station.location,
+          status: station.status,
+          availableSlots: station.availableSlots,
+          reservedSlots: reservedCount,
+        },
+        batteries,
+      },
+    });
+  } catch (error) {
+    console.error("Get available batteries error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy danh sách pin.",
+      error: error.message,
+    });
+  }
+};

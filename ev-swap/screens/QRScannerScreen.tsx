@@ -75,110 +75,162 @@ const QRScannerScreen = () => {
     setScanned(true);
 
     try {
-      // Parse QR data - format: STATION_{id}
-      const stationId = parseInt(data.replace("STATION_", ""));
+      let qrData: any;
 
-      if (isNaN(stationId)) {
-        Alert.alert("Lỗi", "QR code không hợp lệ", [
-          { text: "OK", onPress: () => setScanned(false) },
-        ]);
-        return;
+      // Try to parse as JSON first (new format with action)
+      try {
+        qrData = JSON.parse(data);
+        // Validate JSON QR data structure
+        if (!qrData.stationName) {
+          throw new Error("QR code không hợp lệ");
+        }
+      } catch (jsonError) {
+        // Fallback to old format: STATION_{id}
+        const stationId = parseInt(data.replace("STATION_", ""));
+        if (isNaN(stationId)) {
+          Alert.alert("Lỗi", "QR code không hợp lệ", [
+            { text: "OK", onPress: () => setScanned(false) },
+          ]);
+          return;
+        }
+        qrData = {
+          stationName: `STATION_${stationId}`,
+          location: "",
+          action: "swap",
+        };
       }
 
-      // Check balance first
-      const userBalance = profile?.balance || 0;
-      const swapCost = 7000;
+      const stationId = parseInt(qrData.stationName.replace("STATION_", ""));
 
-      if (userBalance < swapCost) {
-        Alert.alert(
-          "Số dư không đủ",
-          `Cần ${swapCost.toLocaleString()}đ để đổi pin. Số dư hiện tại: ${userBalance.toLocaleString()}đ`,
-          [
-            {
-              text: "Nạp tiền",
-              onPress: () => {
-                navigation.navigate("Main", { screen: "Wallet" });
-                setScanned(false);
+      // Navigate based on action
+      switch (qrData.action) {
+        case "info":
+          // Just show station info
+          navigation.navigate("StationDetails", {
+            stationId,
+            fromQR: true,
+          });
+          setScanned(false);
+          break;
+
+        case "reserve":
+          // Navigate to station details with reservation mode
+          navigation.navigate("StationDetails", {
+            stationId,
+            fromQR: true,
+            showReservation: true,
+          });
+          setScanned(false);
+          break;
+
+        case "swap":
+        default:
+          // Swap flow - check balance first
+          const userBalance = profile?.balance || 0;
+          const swapCost = 7000;
+
+          if (userBalance < swapCost) {
+            Alert.alert(
+              "Số dư không đủ",
+              `Cần ${swapCost.toLocaleString()}đ để đổi pin. Số dư hiện tại: ${userBalance.toLocaleString()}đ`,
+              [
+                {
+                  text: "Nạp tiền",
+                  onPress: () => {
+                    navigation.navigate("Main", { screen: "Wallet" });
+                    setScanned(false);
+                  },
+                },
+                {
+                  text: "Đóng",
+                  style: "cancel",
+                  onPress: () => setScanned(false),
+                },
+              ]
+            );
+            return;
+          }
+
+          // Show welcome message first
+          Alert.alert(
+            `🎉 Chào mừng đến ${qrData.stationName}!`,
+            `${
+              qrData.location ? qrData.location + "\n\n" : ""
+            }Bạn có muốn đổi pin không?\n\nPhí đổi pin: ${swapCost.toLocaleString()}đ\nSố dư hiện tại: ${userBalance.toLocaleString()}đ`,
+            [
+              {
+                text: "Hủy",
+                style: "cancel",
+                onPress: () => setScanned(false),
               },
-            },
-            { text: "Đóng", style: "cancel", onPress: () => setScanned(false) },
-          ]
-        );
-        return;
+              {
+                text: "Xác nhận đổi pin",
+                onPress: async () => {
+                  try {
+                    console.log(
+                      `🔄 Bắt đầu giao dịch - Số dư hiện tại: ${userBalance}đ`
+                    );
+
+                    // Start battery swap transaction
+                    const result = await transactionAPI.startBatterySwap(
+                      stationId
+                    );
+
+                    if (result.success && result.data) {
+                      console.log(
+                        "✅ Giao dịch thành công, đang refresh profile..."
+                      );
+
+                      // Refresh both AuthContext user and Profile
+                      await Promise.all([refreshUser(), refetchProfile()]);
+
+                      // Delay để đảm bảo state đã cập nhật hoàn toàn
+                      await new Promise((resolve) => setTimeout(resolve, 500));
+
+                      console.log(
+                        `💰 Đã trừ ${swapCost}đ - Kiểm tra số dư mới trên trang chủ`
+                      );
+
+                      // Show success message
+                      Alert.alert(
+                        "✅ Đổi pin thành công!",
+                        `Đã trừ ${swapCost.toLocaleString(
+                          "vi-VN"
+                        )}đ\n\nVui lòng lấy pin tại khay số ${
+                          result.data.slotNumber || "N/A"
+                        }`,
+                        [
+                          {
+                            text: "OK",
+                            onPress: () => {
+                              setScanned(false);
+                              navigation.goBack();
+                            },
+                          },
+                        ]
+                      );
+                    } else {
+                      console.error("❌ Giao dịch thất bại:", result.message);
+                      Alert.alert(
+                        "Lỗi",
+                        result.message || "Không thể bắt đầu giao dịch",
+                        [{ text: "OK", onPress: () => setScanned(false) }]
+                      );
+                    }
+                  } catch (error) {
+                    console.error("Transaction error:", error);
+                    Alert.alert(
+                      "Lỗi",
+                      "Có lỗi xảy ra khi thực hiện giao dịch",
+                      [{ text: "OK", onPress: () => setScanned(false) }]
+                    );
+                  }
+                },
+              },
+            ]
+          );
+          break;
       }
-
-      // Show welcome message first
-      Alert.alert(
-        `🎉 Chào mừng bạn đến với Trạm ${stationId}!`,
-        `Bạn có muốn đổi pin không?\n\nPhí đổi pin: ${swapCost.toLocaleString()}đ\nSố dư hiện tại: ${userBalance.toLocaleString()}đ`,
-        [
-          {
-            text: "Hủy",
-            style: "cancel",
-            onPress: () => setScanned(false),
-          },
-          {
-            text: "Xác nhận đổi pin",
-            onPress: async () => {
-              try {
-                console.log(
-                  `🔄 Bắt đầu giao dịch - Số dư hiện tại: ${userBalance}đ`
-                );
-
-                // Start battery swap transaction
-                const result = await transactionAPI.startBatterySwap(stationId);
-
-                if (result.success && result.data) {
-                  console.log(
-                    "✅ Giao dịch thành công, đang refresh profile..."
-                  );
-
-                  // Refresh both AuthContext user and Profile
-                  await Promise.all([refreshUser(), refetchProfile()]);
-
-                  // Delay để đảm bảo state đã cập nhật hoàn toàn
-                  await new Promise((resolve) => setTimeout(resolve, 500));
-
-                  console.log(
-                    `💰 Đã trừ ${swapCost}đ - Kiểm tra số dư mới trên trang chủ`
-                  );
-
-                  // Show success message
-                  Alert.alert(
-                    "✅ Đổi pin thành công!",
-                    `Đã trừ ${swapCost.toLocaleString(
-                      "vi-VN"
-                    )}đ\n\nVui lòng lấy pin tại khay số ${
-                      result.data.slotNumber || "N/A"
-                    }`,
-                    [
-                      {
-                        text: "OK",
-                        onPress: () => {
-                          setScanned(false);
-                          navigation.goBack();
-                        },
-                      },
-                    ]
-                  );
-                } else {
-                  console.error("❌ Giao dịch thất bại:", result.message);
-                  Alert.alert(
-                    "Lỗi",
-                    result.message || "Không thể bắt đầu giao dịch",
-                    [{ text: "OK", onPress: () => setScanned(false) }]
-                  );
-                }
-              } catch (error) {
-                console.error("Transaction error:", error);
-                Alert.alert("Lỗi", "Có lỗi xảy ra khi thực hiện giao dịch", [
-                  { text: "OK", onPress: () => setScanned(false) },
-                ]);
-              }
-            },
-          },
-        ]
-      );
     } catch (error) {
       console.error("QR Scan error:", error);
       Alert.alert("Lỗi", "Có lỗi xảy ra khi quét QR code", [
