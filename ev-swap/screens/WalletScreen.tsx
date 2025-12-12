@@ -201,8 +201,11 @@ const WalletScreen = () => {
                   clearInterval(pollInterval);
                   await refetchProfile();
                   Alert.alert(
-                    "✅ Nạp tiền thành công",
-                    `Đã nạp ${amountValue.toLocaleString()}đ vào tài khoản!\nSố dư mới: ${completeResponse.data.balance.toLocaleString()}đ`
+                    t("common.success"),
+                    t("common.topupSuccessDetails", {
+                      amount: amountValue.toLocaleString(),
+                      balance: completeResponse.data.balance.toLocaleString(),
+                    })
                   );
                 }
               } catch (error) {
@@ -224,14 +227,17 @@ const WalletScreen = () => {
             });
           }
         } else {
-          Alert.alert("Lỗi", "Không nhận được URL thanh toán từ MoMo");
+          Alert.alert(t("common.error"), t("common.paymentUrlError"));
         }
       } else {
-        Alert.alert("Lỗi", response.message || "Không thể tạo thanh toán MoMo");
+        Alert.alert(
+          t("common.error"),
+          response.message || t("common.momoPaymentError")
+        );
       }
     } catch (error) {
       console.error("MoMo payment error:", error);
-      Alert.alert("Lỗi", "Có lỗi xảy ra khi tạo thanh toán MoMo");
+      Alert.alert(t("common.error"), t("common.momoPaymentGeneralError"));
     } finally {
       setIsProcessing(false);
     }

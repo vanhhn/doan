@@ -138,9 +138,12 @@ const PersonalInfoScreen: React.FC = () => {
       setUserInfo(newUserInfo);
       setOriginalUserInfo(newUserInfo);
 
-      // Set avatar from profile
+      // Set avatar from profile - handle both Cloudinary and local URLs
       if (profile.avatarUrl) {
-        setAvatarUri(profile.avatarUrl);
+        const fullAvatarUrl = profile.avatarUrl.startsWith("http")
+          ? profile.avatarUrl
+          : `${API_BASE_URL}${profile.avatarUrl}`;
+        setAvatarUri(fullAvatarUrl);
       }
     }
   }, [profile]);
@@ -214,30 +217,49 @@ const PersonalInfoScreen: React.FC = () => {
 
         if (response.success) {
           // Refresh profile to get server avatar URL
-          await refetch();
-          Alert.alert("Thành công", "Ảnh đại diện đã được lưu!");
+          const refreshedProfile = await refetch();
+          // Update avatar with full URL
+          if (refreshedProfile && refreshedProfile.avatarUrl) {
+            const fullUrl = refreshedProfile.avatarUrl.startsWith("http")
+              ? refreshedProfile.avatarUrl
+              : `${API_BASE_URL}${refreshedProfile.avatarUrl}`;
+            setAvatarUri(fullUrl);
+          }
+          Alert.alert(t("common.success"), t("personalInfo.avatarSaved"));
         } else {
           // Revert to old avatar on error
-          setAvatarUri(profile?.avatarUrl || null);
+          const oldUrl = profile?.avatarUrl
+            ? profile.avatarUrl.startsWith("http")
+              ? profile.avatarUrl
+              : `${API_BASE_URL}${profile.avatarUrl}`
+            : null;
+          setAvatarUri(oldUrl);
           Alert.alert(
-            "Lỗi upload",
-            response.message || response.error || "Không thể upload ảnh"
+            t("personalInfo.uploadError"),
+            response.message ||
+              response.error ||
+              t("personalInfo.uploadGeneralError")
           );
         }
       } catch (error: any) {
         console.error("Upload error:", error);
-        setAvatarUri(profile?.avatarUrl || null);
+        const oldUrl = profile?.avatarUrl
+          ? profile.avatarUrl.startsWith("http")
+            ? profile.avatarUrl
+            : `${API_BASE_URL}${profile.avatarUrl}`
+          : null;
+        setAvatarUri(oldUrl);
 
-        let errorMessage = "Có lỗi xảy ra khi upload ảnh";
+        let errorMessage = t("personalInfo.uploadGeneralError");
         if (error.message?.includes("aborted")) {
-          errorMessage = "Upload timeout. Vui lòng thử lại.";
+          errorMessage = t("personalInfo.uploadTimeout");
         } else if (error.message?.includes("Network")) {
-          errorMessage = "Lỗi kết nối mạng. Kiểm tra kết nối và thử lại.";
+          errorMessage = t("personalInfo.networkError");
         } else if (error.message) {
           errorMessage = error.message;
         }
 
-        Alert.alert("Lỗi", errorMessage);
+        Alert.alert(t("common.error"), errorMessage);
       } finally {
         setIsUploading(false);
       }
@@ -248,7 +270,11 @@ const PersonalInfoScreen: React.FC = () => {
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ["Hủy", "Chụp ảnh", "Chọn từ thư viện"],
+          options: [
+            t("common.cancel"),
+            t("common.takePhoto"),
+            t("common.chooseFromLibrary"),
+          ],
           cancelButtonIndex: 0,
         },
         (buttonIndex) => {

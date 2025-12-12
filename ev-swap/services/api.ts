@@ -162,6 +162,14 @@ class ApiClient {
 
       if (!response.ok) {
         console.error("❌ API Error:", data);
+
+        // Handle 401 Unauthorized - token expired or invalid
+        if (response.status === 401) {
+          console.log("🔒 Unauthorized - removing token");
+          await this.removeToken();
+          // Note: Don't navigate here, let AuthContext handle it
+        }
+
         throw new Error(
           data.message || `HTTP error! status: ${response.status}`
         );

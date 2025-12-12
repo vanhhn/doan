@@ -85,13 +85,41 @@
     "error": "Error",
     "success": "Success",
     "warning": "Warning",
-    "info": "Information"
+    "info": "Information",
+    "notification": "Notification",
+    "processing": "Processing...",
+    "uploading": "Uploading...",
+    "changePhoto": "Change Photo",
+    "takePhoto": "Take Photo",
+    "chooseFromLibrary": "Choose from Library",
+    "chooseAvatar": "Choose Avatar",
+    "invalidAmount": "Please enter a valid amount",
+    "minAmount": "Minimum top-up amount is 10,000đ",
+    "selectPaymentMethod": "Please select a payment method",
+    "withdrawNotAvailable": "Withdraw function is not available yet",
+    "paymentUrlError": "Did not receive payment URL from MoMo",
+    "momoPaymentError": "Cannot create MoMo payment",
+    "momoPaymentGeneralError": "An error occurred while creating MoMo payment",
+    "topupError": "Cannot top up",
+    "topupGeneralError": "An error occurred while topping up",
+    "topupSuccess": "Top-up successful!",
+    "topupSuccessDetails": "Added {amount} to your account!\nNew balance: {balance}",
+    "paymentFailed": "Payment failed. Please try again.",
+    "cancelPayment": "Cancel payment?",
+    "cancelPaymentConfirm": "Are you sure you want to cancel this transaction?",
+    "direction": "Direction",
+    "directionTo": "Do you want to go to {name}?",
+    "openGoogleMaps": "Open Google Maps",
+    "invalidQRCode": "Invalid QR code",
+    "transactionError": "An error occurred during the transaction"
   },
   "modals": {
     "reserve": {
       "title": "Confirm Reservation",
       "body": "Would you like to reserve a battery at {station}?",
-      "success": "Reservation confirmed!"
+      "success": "Reservation confirmed!",
+      "error": "Cannot reserve",
+      "generalError": "An error occurred while reserving"
     },
     "topup": {
       "title": "Top Up Wallet"
@@ -132,7 +160,15 @@
     "phone": "Phone Number",
     "memberSince": "Member Since",
     "editButton": "Edit Information",
-    "saveButton": "Save Changes"
+    "saveButton": "Save Changes",
+    "updateSuccess": "Information updated successfully!",
+    "updateError": "Cannot update information",
+    "updateGeneralError": "An error occurred while updating information",
+    "avatarSaved": "Avatar saved successfully!",
+    "uploadError": "Upload Error",
+    "uploadTimeout": "Upload timeout. Please try again.",
+    "networkError": "Network error. Check your connection and try again.",
+    "uploadGeneralError": "An error occurred while uploading image"
   },
   "settings": {
     "notifications": "Notifications",
