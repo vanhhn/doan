@@ -1,0 +1,162 @@
+{
+  "nav": {
+    "home": "Trang chủ",
+    "map": "Bản đồ",
+    "wallet": "Ví",
+    "account": "Tài khoản"
+  },
+  "login": {
+    "welcome": "Chào mừng trở lại!",
+    "subtitle": "Đăng nhập vào tài khoản của bạn",
+    "phoneOrCard": "Số điện thoại hoặc ID thẻ",
+    "password": "Mật khẩu",
+    "loginButton": "Đăng nhập",
+    "loggingIn": "Đang đăng nhập...",
+    "forgotPassword": "Quên mật khẩu?",
+    "noAccount": "Chưa có tài khoản?",
+    "signUp": "Đăng ký",
+    "fillAllFields": "Vui lòng điền đầy đủ thông tin",
+    "emptyPhoneOrCard": "Vui lòng nhập số điện thoại hoặc ID thẻ",
+    "emptyPassword": "Vui lòng nhập mật khẩu",
+    "loginError": "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin và thử lại.",
+    "forgotPasswordMessage": "Vui lòng liên hệ bộ phận hỗ trợ để đặt lại mật khẩu."
+  },
+  "signup": {
+    "createAccount": "Tạo tài khoản",
+    "subtitle": "Bắt đầu với EV Swap",
+    "fullName": "Họ và tên",
+    "phoneNumber": "Số điện thoại",
+    "cardId": "Tên đăng nhập",
+    "phoneOrCard": "Số điện thoại hoặc ID thẻ",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "signUpButton": "Đăng ký",
+    "alreadyHaveAccount": "Đã có tài khoản?",
+    "signIn": "Đăng nhập",
+    "errorPasswordsMatch": "Mật khẩu không khớp.",
+    "errorFieldsRequired": "Vui lòng điền tất cả các trường."
+  },
+  "home": {
+    "remainingRange": "Quãng đường còn lại: ~{range}km",
+    "swapButton": "Đổi pin ngay",
+    "findStation": "Tìm trạm",
+    "history": "Lịch sử",
+    "payment": "Thanh toán",
+    "support": "Hỗ trợ",
+    "qrScanner": "Quét QR",
+    "welcome": "Chào mừng",
+    "totalSwaps": "Tổng số lần đổi",
+    "swaps": "lần"
+  },
+  "map": {
+    "nearbyStations": "Các trạm gần đây"
+  },
+  "history": {
+    "noHistory": "Chưa có lịch sử giao dịch."
+  },
+  "wallet": {
+    "currentBalance": "Số dư hiện tại",
+    "topUp": "Nạp tiền",
+    "withdraw": "Rút tiền",
+    "recentActivity": "Hoạt động gần đây"
+  },
+  "account": {
+    "personalInfo": "Thông tin cá nhân",
+    "settings": "Cài đặt",
+    "helpCenter": "Trung tâm hỗ trợ",
+    "preferences": "Tùy chọn",
+    "darkMode": "Chế độ tối",
+    "language": "Ngôn ngữ",
+    "english": "Tiếng Anh",
+    "vietnamese": "Tiếng Việt",
+    "logout": "Đăng xuất"
+  },
+  "station": {
+    "notFound": "Không tìm thấy trạm với ID {id}.",
+    "available": "Có sẵn",
+    "batteryLevel": "Mức pin",
+    "distance": "Khoảng cách",
+    "reserveButton": "Đặt trước pin"
+  },
+  "common": {
+    "back": "Quay lại",
+    "confirm": "Xác nhận",
+    "cancel": "Hủy",
+    "error": "Lỗi",
+    "success": "Thành công",
+    "warning": "Cảnh báo",
+    "info": "Thông tin"
+  },
+  "modals": {
+    "reserve": {
+      "title": "Xác nhận Đặt chỗ",
+      "body": "Bạn có muốn đặt trước một cục pin tại {station} không?",
+      "success": "Đặt chỗ thành công!"
+    },
+    "topup": {
+      "title": "Nạp tiền vào Ví"
+    },
+    "withdraw": {
+      "title": "Rút tiền"
+    },
+    "common": {
+      "amount": "Số tiền",
+      "success": "Giao dịch thành công!"
+    }
+  },
+  "help": {
+    "title": "Trung tâm Hỗ trợ",
+    "faq": "Câu hỏi thường gặp",
+    "q1": {
+      "title": "Làm cách nào để đổi pin?",
+      "answer": "Tìm một trạm gần bạn trên bản đồ, chọn một cục pin có sẵn và làm theo hướng dẫn trên màn hình tại trạm để hoàn tất việc đổi pin."
+    },
+    "q2": {
+      "title": "Các phương thức thanh toán là gì?",
+      "answer": "Bạn có thể thanh toán bằng số dư trong ví ứng dụng hoặc thẻ tín dụng/ghi nợ đã đăng ký."
+    },
+    "q3": {
+      "title": "Làm cách nào để nạp tiền vào ví?",
+      "answer": "Vào màn hình Ví, nhấn 'Nạp tiền', nhập số tiền mong muốn và xác nhận giao dịch bằng phương thức thanh toán của bạn."
+    },
+    "contact": {
+      "title": "Liên hệ chúng tôi",
+      "phone": "Điện thoại",
+      "email": "Email"
+    }
+  },
+  "personalInfo": {
+    "title": "Thông tin cá nhân",
+    "name": "Tên",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "memberSince": "Thành viên từ",
+    "editButton": "Chỉnh sửa thông tin",
+    "saveButton": "Lưu thay đổi"
+  },
+  "settings": {
+    "notifications": "Thông báo",
+    "promo": "Ưu đãi khuyến mãi",
+    "reminders": "Nhắc nhở đổi pin",
+    "updates": "Cập nhật ứng dụng"
+  },
+  "qrScanner": {
+    "title": "QR Scanner",
+    "subtitle": "Quét QR code ở trạm sạc để bắt đầu đổi pin",
+    "cameraUnavailable": "Camera không khả dụng trên Web",
+    "pointCamera": "Hướng camera vào QR code",
+    "manualInput": "Nhập thủ công",
+    "cancel": "Hủy",
+    "examples": "Ví dụ QR codes:",
+    "station": "Trạm",
+    "loading": "Đang tải...",
+    "noPermission": "Không có quyền truy cập camera",
+    "permissionMessage": "Vui lòng cấp quyền camera trong cài đặt để quét QR code",
+    "back": "Quay lại",
+    "scanInstruction": "Đặt QR code vào khung để quét",
+    "rescan": "Quét lại",
+    "enterStationId": "Nhập Station ID",
+    "enterIdPlaceholder": "Nhập ID trạm (1-6)",
+    "confirm": "Xác nhận"
+  }
+}

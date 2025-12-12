@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "EV Swap",
+    "slug": "ev-swap",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#006A6A"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.evswap.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#006A6A"
+      },
+      "package": "com.evswap.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ứng dụng cần quyền truy cập camera để quét mã QR tại trạm."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "463b3b40-c1bf-4008-8f88-784569d1d29f"
+      }
+    }
+  }
+}

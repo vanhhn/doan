@@ -1,0 +1,162 @@
+{
+  "nav": {
+    "home": "Home",
+    "map": "Map",
+    "wallet": "Wallet",
+    "account": "Account"
+  },
+  "login": {
+    "welcome": "Welcome back!",
+    "subtitle": "Sign in to your account",
+    "phoneOrCard": "Phone Number or Card ID",
+    "password": "Password",
+    "loginButton": "Login",
+    "loggingIn": "Logging in...",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign Up",
+    "fillAllFields": "Please fill in all fields",
+    "emptyPhoneOrCard": "Please enter phone number or card ID",
+    "emptyPassword": "Please enter password",
+    "loginError": "Login failed. Please check your credentials and try again.",
+    "forgotPasswordMessage": "Please contact support to reset your password."
+  },
+  "signup": {
+    "createAccount": "Create an Account",
+    "subtitle": "Get started with EV Swap",
+    "fullName": "Full Name",
+    "phoneNumber": "Phone Number",
+    "cardId": "Username",
+    "phoneOrCard": "Phone Number or Card ID",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "signUpButton": "Sign Up",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Sign In",
+    "errorPasswordsMatch": "Passwords do not match.",
+    "errorFieldsRequired": "All fields are required."
+  },
+  "home": {
+    "remainingRange": "Remaining range: ~{range}km",
+    "swapButton": "Swap Battery Now",
+    "findStation": "Find Station",
+    "history": "History",
+    "payment": "Payment",
+    "support": "Support",
+    "qrScanner": "QR Scanner",
+    "welcome": "Welcome",
+    "totalSwaps": "Total swaps",
+    "swaps": "times"
+  },
+  "map": {
+    "nearbyStations": "Nearby Stations"
+  },
+  "history": {
+    "noHistory": "No transaction history yet."
+  },
+  "wallet": {
+    "currentBalance": "Current Balance",
+    "topUp": "Top Up",
+    "withdraw": "Withdraw",
+    "recentActivity": "Recent Activity"
+  },
+  "account": {
+    "personalInfo": "Personal Info",
+    "settings": "Settings",
+    "helpCenter": "Help Center",
+    "preferences": "Preferences",
+    "darkMode": "Dark Mode",
+    "language": "Language",
+    "english": "English",
+    "vietnamese": "Vietnamese",
+    "logout": "Logout"
+  },
+  "station": {
+    "notFound": "Station with ID {id} not found.",
+    "available": "Available",
+    "batteryLevel": "Battery Level",
+    "distance": "Distance",
+    "reserveButton": "Reserve a Battery"
+  },
+  "common": {
+    "back": "Back",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Information"
+  },
+  "modals": {
+    "reserve": {
+      "title": "Confirm Reservation",
+      "body": "Would you like to reserve a battery at {station}?",
+      "success": "Reservation confirmed!"
+    },
+    "topup": {
+      "title": "Top Up Wallet"
+    },
+    "withdraw": {
+      "title": "Withdraw Funds"
+    },
+    "common": {
+      "amount": "Amount",
+      "success": "Transaction Successful!"
+    }
+  },
+  "help": {
+    "title": "Help Center",
+    "faq": "Frequently Asked Questions",
+    "q1": {
+      "title": "How do I swap a battery?",
+      "answer": "Find a nearby station on the map, select an available battery, and follow the on-screen instructions at the station to complete the swap."
+    },
+    "q2": {
+      "title": "What are the payment methods?",
+      "answer": "You can pay using your in-app wallet balance or a registered credit/debit card."
+    },
+    "q3": {
+      "title": "How do I top up my wallet?",
+      "answer": "Go to the Wallet screen, tap 'Top Up', enter the desired amount, and confirm the transaction with your payment method."
+    },
+    "contact": {
+      "title": "Contact Us",
+      "phone": "Phone",
+      "email": "Email"
+    }
+  },
+  "personalInfo": {
+    "title": "Personal Info",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "memberSince": "Member Since",
+    "editButton": "Edit Information",
+    "saveButton": "Save Changes"
+  },
+  "settings": {
+    "notifications": "Notifications",
+    "promo": "Promotional Offers",
+    "reminders": "Swap Reminders",
+    "updates": "App Updates"
+  },
+  "qrScanner": {
+    "title": "QR Scanner",
+    "subtitle": "Scan QR code at the station to start battery swap",
+    "cameraUnavailable": "Camera not available on Web",
+    "pointCamera": "Point camera at QR code",
+    "manualInput": "Manual Input",
+    "cancel": "Cancel",
+    "examples": "Example QR codes:",
+    "station": "Station",
+    "loading": "Loading...",
+    "noPermission": "No camera access",
+    "permissionMessage": "Please grant camera permission in settings to scan QR codes",
+    "back": "Back",
+    "scanInstruction": "Place QR code in frame to scan",
+    "rescan": "Scan Again",
+    "enterStationId": "Enter Station ID",
+    "enterIdPlaceholder": "Enter station ID (1-6)",
+    "confirm": "Confirm"
+  }
+}
