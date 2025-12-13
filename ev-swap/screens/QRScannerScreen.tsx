@@ -107,8 +107,7 @@ const QRScannerScreen = () => {
         case "info":
           // Just show station info
           navigation.navigate("StationDetails", {
-            stationId,
-            fromQR: true,
+            id: stationId.toString(),
           });
           setScanned(false);
           break;
@@ -116,9 +115,7 @@ const QRScannerScreen = () => {
         case "reserve":
           // Navigate to station details with reservation mode
           navigation.navigate("StationDetails", {
-            stationId,
-            fromQR: true,
-            showReservation: true,
+            id: stationId.toString(),
           });
           setScanned(false);
           break;

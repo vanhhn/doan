@@ -65,7 +65,10 @@ const AppNavigator: React.FC = () => {
               {() => <LoginScreen onLogin={handleLogin} />}
             </Stack.Screen>
             <Stack.Screen name="SignUp" component={SignUpScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen
+              name="ForgotPassword"
+              component={ForgotPasswordScreen}
+            />
             <Stack.Screen name="NetworkTest" component={NetworkTestScreen} />
             <Stack.Screen name="LoginTest" component={LoginTestScreen} />
           </>

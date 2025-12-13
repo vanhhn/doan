@@ -177,15 +177,19 @@ const MapScreen = () => {
   } | null>(null);
   const [locationPermission, setLocationPermission] = useState<boolean>(false);
   const [locationLoading, setLocationLoading] = useState<boolean>(true);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   // Get user's current location
   useEffect(() => {
     (async () => {
       try {
+        console.log("📍 Requesting location permission...");
         const { status } = await Location.requestForegroundPermissionsAsync();
+        console.log("📍 Permission status:", status);
         setLocationPermission(status === "granted");
 
         if (status === "granted") {
+          console.log("📍 Getting current position...");
           const location = await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.Balanced,
           });
@@ -195,13 +199,15 @@ const MapScreen = () => {
           });
           console.log("📍 User location:", location.coords);
         } else {
+          console.log("📍 Location permission denied");
           Alert.alert(
             "Quyền truy cập vị trí",
             "Cần quyền truy cập vị trí để tính khoảng cách đến các trạm"
           );
         }
       } catch (error) {
-        console.error("Error getting location:", error);
+        console.error("❌ Error getting location:", error);
+        setMapError(error instanceof Error ? error.message : "Unknown error");
       } finally {
         setLocationLoading(false);
       }
@@ -296,50 +302,88 @@ const MapScreen = () => {
     >
       {/* Map Area */}
       <View style={styles.mapContainer}>
-        <MapView
-          ref={mapRef}
-          provider={PROVIDER_GOOGLE}
-          style={styles.map}
-          initialRegion={{
-            latitude: userLocation?.latitude || 21.0285,
-            longitude: userLocation?.longitude || 105.8542,
-            latitudeDelta: 0.1,
-            longitudeDelta: 0.1,
-          }}
-          showsUserLocation={true}
-          showsMyLocationButton={true}
-          showsCompass={true}
-        >
-          {/* User location marker */}
-          {userLocation && (
-            <Marker
-              coordinate={{
-                latitude: userLocation.latitude,
-                longitude: userLocation.longitude,
-              }}
-              title="Vị trí của bạn"
-              description="Bạn đang ở đây"
-              pinColor="blue"
-            />
-          )}
+        {mapError ? (
+          <View
+            style={[
+              styles.errorContainer,
+              {
+                backgroundColor: isDark
+                  ? Colors.dark.surface
+                  : Colors.light.surface,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.errorText,
+                { color: isDark ? Colors.dark.error : Colors.light.error },
+              ]}
+            >
+              ⚠️ Không thể tải bản đồ
+            </Text>
+            <Text
+              style={[
+                styles.errorSubtext,
+                {
+                  color: isDark
+                    ? Colors.dark.textSecondary
+                    : Colors.light.textSecondary,
+                },
+              ]}
+            >
+              {mapError}
+            </Text>
+          </View>
+        ) : (
+          <MapView
+            ref={mapRef}
+            provider={PROVIDER_GOOGLE}
+            style={styles.map}
+            initialRegion={{
+              latitude: userLocation?.latitude || 21.0285,
+              longitude: userLocation?.longitude || 105.8542,
+              latitudeDelta: 0.1,
+              longitudeDelta: 0.1,
+            }}
+            showsUserLocation={true}
+            showsMyLocationButton={true}
+            showsCompass={true}
+            onError={(error) => {
+              console.error("❌ MapView error:", error);
+              setMapError("Lỗi hiển thị bản đồ");
+            }}
+          >
+            {/* User location marker */}
+            {userLocation && (
+              <Marker
+                coordinate={{
+                  latitude: userLocation.latitude,
+                  longitude: userLocation.longitude,
+                }}
+                title="Vị trí của bạn"
+                description="Bạn đang ở đây"
+                pinColor="blue"
+              />
+            )}
 
-          {/* Station markers */}
-          {stationsWithDistance.map((station) => (
-            <Marker
-              key={station.id}
-              coordinate={{
-                latitude: station.latitude,
-                longitude: station.longitude,
-              }}
-              title={station.name}
-              description={`${station.distance.toFixed(1)} km • ${
-                station.availableBatteries
-              }/${station.totalSlots} pin`}
-              pinColor={station.availableBatteries > 0 ? "green" : "red"}
-              onPress={() => handleMarkerPress(station)}
-            />
-          ))}
-        </MapView>
+            {/* Station markers */}
+            {stationsWithDistance.map((station) => (
+              <Marker
+                key={station.id}
+                coordinate={{
+                  latitude: station.latitude,
+                  longitude: station.longitude,
+                }}
+                title={station.name}
+                description={`${station.distance.toFixed(1)} km • ${
+                  station.availableBatteries
+                }/${station.totalSlots} pin`}
+                pinColor={station.availableBatteries > 0 ? "green" : "red"}
+                onPress={() => handleMarkerPress(station)}
+              />
+            ))}
+          </MapView>
+        )}
       </View>
 
       {/* Station List */}
@@ -508,7 +552,13 @@ const styles = StyleSheet.create({
     padding: Spacing.xl,
   },
   errorText: {
-    fontSize: FontSizes.base,
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.bold,
+    textAlign: "center",
+    marginBottom: Spacing.sm,
+  },
+  errorSubtext: {
+    fontSize: FontSizes.sm,
     textAlign: "center",
     marginBottom: Spacing.md,
   },
