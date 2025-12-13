@@ -150,16 +150,6 @@ const calculateDistance = (
   return R * c;
 };
 
-// Tọa độ GPS giả định cho các trạm (vì database không có)
-const STATION_COORDINATES: { [key: number]: { lat: number; lng: number } } = {
-  1: { lat: 21.0063, lng: 105.8433 }, // PTIT Ha Noi
-  2: { lat: 16.0471, lng: 108.2068 }, // BKDN Da Nang
-  3: { lat: 21.0078, lng: 105.8252 }, // Vincom Tran Duy Hung
-  4: { lat: 16.0544, lng: 108.2022 }, // Lotte Mart Da Nang
-  5: { lat: 21.0285, lng: 105.785 }, // BigC Thang Long
-  6: { lat: 16.0408, lng: 108.2163 }, // Aeon Mall Da Nang
-};
-
 const MapScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
@@ -261,15 +251,20 @@ const MapScreen = () => {
   // Tính khoảng cách và sắp xếp các trạm
   const stationsWithDistance = stations
     .map((station) => {
-      const coords = STATION_COORDINATES[station.id];
+      // Parse location: "Địa chỉ;latitude;longitude"
+      const locationParts = station.location.split(";");
+      const address = locationParts[0] || station.location;
+      const lat = locationParts[1] ? parseFloat(locationParts[1]) : 0;
+      const lng = locationParts[2] ? parseFloat(locationParts[2]) : 0;
+
       let distance = 0;
 
-      if (userLocation && coords) {
+      if (userLocation && lat && lng) {
         distance = calculateDistance(
           userLocation.latitude,
           userLocation.longitude,
-          coords.lat,
-          coords.lng
+          lat,
+          lng
         );
       } else {
         // Fallback to random distance if no GPS
@@ -279,12 +274,12 @@ const MapScreen = () => {
       return {
         id: station.id.toString(),
         name: station.name,
-        address: station.location,
+        address: address,
         distance: distance,
         availableBatteries: station.availableSlots,
         totalSlots: station.totalSlots,
-        latitude: coords?.lat || 0,
-        longitude: coords?.lng || 0,
+        latitude: lat,
+        longitude: lng,
       };
     })
     .sort((a, b) => a.distance - b.distance); // Sắp xếp theo khoảng cách gần nhất
@@ -348,10 +343,6 @@ const MapScreen = () => {
             showsUserLocation={true}
             showsMyLocationButton={true}
             showsCompass={true}
-            onError={(error) => {
-              console.error("❌ MapView error:", error);
-              setMapError("Lỗi hiển thị bản đồ");
-            }}
           >
             {/* User location marker */}
             {userLocation && (
