@@ -16,16 +16,16 @@ Database quản lý hệ thống đổi pin xe điện với 12 bảng chính
 ┌──────────────────┐         ┌──────────────────┐         ┌──────────────────┐
 │    CUSTOMER      │         │     BATTERY      │         │     STATION      │
 ├──────────────────┤         ├──────────────────┤         ├──────────────────┤
-│ PK id            │    ┌────│ PK uid           │         │ PK id            │
+│ PK id            │    ┌────│ PK uid (UID-xxx) │         │ PK id            │
 │    fullName      │    │    │    status        │         │    name          │
-│    username      │    │    │    chargeCycles  │         │    location      │
+│    username      │    │    │    chargeCycles  │         │    location *    │
 │    passwordHash  │    │    │    lastCharged   │         │    status        │
 │    phone         │    │    │    createdAt     │         │    totalSlots    │
 │    email         │    │    └──────────────────┘         │    availableSlots│
 │ FK currentBattery│────┘         │      │                │    lastMaint...  │
 │    Uid           │               │      │                │    createdAt     │
 │    totalSwaps    │               │      │                └──────────────────┘
-│    balance       │               │      │                     │    │    │
+│    balance       │               │      │                * Format: Address;lat;lng
 │    avatarUrl     │               │      │                     │    │    │
 │    createdAt     │               │      │                     │    │    │
 └──────────────────┘               │      │                     │    │    │
@@ -176,9 +176,9 @@ Database quản lý hệ thống đổi pin xe điện với 12 bảng chính
 
 ### 2. **BATTERY** (Pin)
 
-- **PK**: `uid` (STRING)
+- **PK**: `uid` (STRING) - Format: UID-xxx (ví dụ: UID-001, UID-004)
 - **Thuộc tính**:
-  - `status`: Trạng thái (full, charging, in_use, maintenance)
+  - `status`: Trạng thái (in_stock, charging, in_use, maintenance)
   - `chargeCycles`: Số chu kỳ sạc
   - `lastCharged`: Lần sạc cuối
   - `createdAt`: Ngày tạo
@@ -195,7 +195,7 @@ Database quản lý hệ thống đổi pin xe điện với 12 bảng chính
 - **PK**: `id` (INT)
 - **Thuộc tính**:
   - `name`: Tên trạm (unique)
-  - `location`: Địa điểm
+  - `location`: Địa điểm - Format: "Address;latitude;longitude" (phân tách bằng dấu chấm phẩy)
   - `status`: Trạng thái (active, inactive, maintenance, out_of_battery)
   - `totalSlots`: Tổng số slot
   - `availableSlots`: Số slot khả dụng
@@ -443,6 +443,12 @@ Admin → tạo MaintenanceLog
 
 ---
 
-**Cập nhật**: 12/12/2025  
+**Cập nhật**: 13/12/2025  
 **Database**: PostgreSQL on AWS RDS (Heroku)  
-**ORM**: Prisma
+**ORM**: Prisma  
+**Lưu ý quan trọng**:
+
+- Battery UID format: UID-xxx (ví dụ: UID-001, UID-004)
+- Station location format: "Address;latitude;longitude"
+- Battery status: in_stock, charging, in_use, maintenance
+- Slot status: empty, occupied, charging, error

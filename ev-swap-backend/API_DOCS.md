@@ -67,7 +67,7 @@ Header: x-api-key: <IOT_API_KEY>
 
 ```json
 {
-  "username": "string (required)",
+  "username": "string (required) - có thể dùng username hoặc số điện thoại",
   "password": "string (required)"
 }
 ```
@@ -90,6 +90,39 @@ Header: x-api-key: <IOT_API_KEY>
       "totalSwaps": 5
     }
   }
+}
+```
+
+---
+
+#### POST `/api/auth/reset-password`
+
+Đặt lại mật khẩu (Quên mật khẩu)
+
+**Request Body:**
+
+```json
+{
+  "phone": "string (required) - Số điện thoại đã đăng ký",
+  "newPassword": "string (required, min 6 characters)"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay."
+}
+```
+
+**Error Response (404):**
+
+```json
+{
+  "success": false,
+  "message": "Không tìm thấy tài khoản với số điện thoại này."
 }
 ```
 
@@ -135,7 +168,7 @@ Authorization: Bearer <token>
 
 #### GET `/api/me/history`
 
-Lấy lịch sử giao dịch (cần JWT)
+Lấy lịch sử giao dịch và nạp tiền (cần JWT)
 
 **Query Params:**
 
@@ -150,30 +183,19 @@ Lấy lịch sử giao dịch (cần JWT)
   "data": {
     "transactions": [
       {
-        "id": 1,
-        "customerId": 1,
-        "stationId": 1,
-        "requestType": "swap",
-        "oldBatteryUid": "BAT001",
-        "newBatteryUid": "BAT004",
-        "slotIn": 1,
-        "slotOut": 2,
-        "transactionTime": "2024-01-13T10:00:00.000Z",
-        "completedTime": "2024-01-13T10:05:00.000Z",
-        "status": "completed",
-        "station": {
-          "id": 1,
-          "name": "STATION_01",
-          "location": "PTIT Ha Noi"
-        },
-        "oldBattery": {
-          "uid": "BAT001",
-          "chargeLevel": 20
-        },
-        "newBattery": {
-          "uid": "BAT004",
-          "chargeLevel": 100
-        }
+        "type": "swap",
+        "date": "2024-01-13T10:00:00.000Z",
+        "amount": -7000,
+        "description": "Đổi pin tại STATION_01",
+        "stationName": "STATION_01",
+        "cost": 7000
+      },
+      {
+        "type": "topup",
+        "date": "2024-01-12T15:30:00.000Z",
+        "amount": 50000,
+        "description": "Nạp tiền qua MOMO",
+        "paymentMethod": "momo"
       }
     ],
     "pagination": {
@@ -184,6 +206,12 @@ Lấy lịch sử giao dịch (cần JWT)
   }
 }
 ```
+
+**Note:**
+
+- `type`: "swap" (đổi pin) hoặc "topup" (nạp tiền)
+- `amount`: Số âm (-) cho swap, số dương (+) cho topup
+- Transactions được sắp xếp theo thời gian mới nhất
 
 ---
 
@@ -202,7 +230,7 @@ Lấy danh sách tất cả trạm
     {
       "id": 1,
       "name": "STATION_01",
-      "location": "PTIT Ha Noi",
+      "location": "Học viện Công nghệ Bưu chính Viễn thông Hà Nội;21.0063;105.8433",
       "status": "active",
       "totalSlots": 6,
       "availableSlots": 4,
@@ -218,7 +246,7 @@ Lấy danh sách tất cả trạm
         {
           "id": 2,
           "slotNumber": 2,
-          "status": "full",
+          "status": "occupied",
           "isBatteryPresent": true,
           "chargeLevel": 100
         }
@@ -228,6 +256,13 @@ Lấy danh sách tất cả trạm
   ]
 }
 ```
+
+**Note:**
+
+- `location` format: `Địa chỉ;latitude;longitude`
+- Frontend cần split bằng `;` để lấy address, lat, lng
+- `status` values: `active`, `inactive`, `maintenance`, `out_of_battery`
+- Slot `status` values: `empty`, `occupied`, `charging`, `error`
 
 ---
 
@@ -243,7 +278,7 @@ Lấy chi tiết một trạm
   "data": {
     "id": 1,
     "name": "STATION_01",
-    "location": "PTIT Ha Noi",
+    "location": "Học viện Công nghệ Bưu chính Viễn thông Hà Nội;21.0063;105.8433",
     "status": "active",
     "totalSlots": 6,
     "availableSlots": 4,
@@ -254,23 +289,22 @@ Lấy chi tiết một trạm
         "id": 2,
         "stationId": 1,
         "slotNumber": 2,
-        "status": "full",
+        "status": "occupied",
         "isBatteryPresent": true,
         "isLocked": true,
-        "batteryUid": "BAT004",
+        "batteryUid": "UID-004",
         "chargeLevel": 100,
         "lastUpdated": "2024-01-15T10:30:00.000Z",
         "battery": {
-          "uid": "BAT004",
-          "status": "good",
-          "chargeLevel": 100,
+          "uid": "UID-004",
+          "status": "in_stock",
           "chargeCycles": 45,
           "lastCharged": "2024-01-15T12:00:00.000Z"
         }
       }
     ],
     "slotsSummary": {
-      "full": 4,
+      "occupied": 4,
       "charging": 1,
       "empty": 1,
       "maintenance": 0
@@ -308,24 +342,24 @@ Yêu cầu đổi pin (cần JWT)
       "customerId": 1,
       "stationId": 1,
       "requestType": "swap",
-      "oldBatteryUid": "BAT001",
+      "oldBatteryUid": "UID-001",
       "slotIn": 1,
-      "newBatteryUid": "BAT004",
+      "newBatteryUid": "UID-004",
       "slotOut": 2,
       "transactionTime": "2024-01-15T10:00:00.000Z",
       "completedTime": null,
       "status": "pending",
       "station": {
         "name": "STATION_01",
-        "location": "PTIT Ha Noi"
+        "location": "Học viện Công nghệ Bưu chính Viễn thông Hà Nội;21.0063;105.8433"
       },
       "newBattery": {
-        "uid": "BAT004",
-        "chargeLevel": 100
+        "uid": "UID-004",
+        "status": "in_stock"
       }
     },
     "slotNumber": 2,
-    "batteryUid": "BAT004",
+    "batteryUid": "UID-004",
     "slotInNumber": 1
   }
 }
@@ -398,9 +432,8 @@ x-api-key: <IOT_API_KEY>
   "success": true,
   "valid": true,
   "data": {
-    "uid": "BAT001",
-    "status": "good",
-    "chargeLevel": 85,
+    "uid": "UID-001",
+    "status": "in_stock",
     "chargeCycles": 120
   },
   "message": "Pin hợp lệ."
@@ -429,8 +462,8 @@ Cập nhật trạng thái slot (cần API Key)
 {
   "station_id": 1,
   "slot_number": 3,
-  "status": "charging", // full, charging, empty, maintenance
-  "battery_uid": "BAT011", // optional
+  "status": "charging", // occupied, charging, empty, error
+  "battery_uid": "UID-011", // optional
   "charge_level": 75 // optional
 }
 ```
@@ -448,7 +481,7 @@ Cập nhật trạng thái slot (cần API Key)
     "status": "charging",
     "isBatteryPresent": true,
     "isLocked": true,
-    "batteryUid": "BAT011",
+    "batteryUid": "UID-011",
     "chargeLevel": 75,
     "lastUpdated": "2024-01-15T10:30:00.000Z"
   }
@@ -525,13 +558,15 @@ Cập nhật trạng thái slot (cần API Key)
 ## 📝 Notes
 
 1. **JWT Token** có hiệu lực 7 ngày (mặc định)
-2. **Slot status** có thể là: `empty`, `full`, `charging`, `maintenance`
-3. **Battery status** có thể là: `good`, `average`, `charging`, `in_use`, `maintenance`
+2. **Slot status** có thể là: `empty`, `occupied`, `charging`, `error`
+3. **Battery status** có thể là: `in_stock`, `charging`, `in_use`, `maintenance`
 4. **Station status** tự động cập nhật dựa trên số pin available:
    - `active`: Có >= 2 pin đầy
-   - `low_battery`: Có 1 pin đầy
+   - `inactive`: Trạm không hoạt động
    - `out_of_battery`: Không có pin đầy
    - `maintenance`: Đang bảo trì
+5. **Location format** trong stations: "Address;latitude;longitude" (phân tách bằng dấu chấm phẩy). Frontend cần split để lấy GPS coordinates.
+6. **Battery UID format**: "UID-xxx" (ví dụ: UID-001, UID-004)
 
 ---
 
