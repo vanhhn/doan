@@ -24,8 +24,15 @@
       "package": "com.evswap.app",
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
-      ]
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyApB47DdUIOvYUPb6tNF5fQf93H5d1p0Uo"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
