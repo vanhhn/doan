@@ -282,7 +282,13 @@ const MapScreen = () => {
         longitude: lng,
       };
     })
-    .sort((a, b) => a.distance - b.distance); // Sắp xếp theo khoảng cách gần nhất
+    .sort((a, b) => {
+      // Ưu tiên 1: Trạm có pin trước
+      if (a.availableBatteries > 0 && b.availableBatteries === 0) return -1;
+      if (a.availableBatteries === 0 && b.availableBatteries > 0) return 1;
+      // Ưu tiên 2: Khoảng cách gần nhất
+      return a.distance - b.distance;
+    });
 
   return (
     <View

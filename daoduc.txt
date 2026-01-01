@@ -1,0 +1,257 @@
+ÁP DỤNG CÁC QUY TẮC ĐẠO ĐỨC NGHỀ NGHIỆP TRONG NGHIÊN CỨU VÀ PHÁT TRIỂN HỆ THỐNG IOT CHO MÔ HÌNH EV BATTERY SWAPPING
+
+1. ĐẠO ĐỨC NGHỀ NGHIỆP TRONG NGHIÊN CỨU CÔNG NGHỆ MẠNG VÀ IOT
+
+1.1. Khái niệm đạo đức nghề nghiệp trong nghiên cứu kỹ thuật, công nghệ mạng và IoT
+
+Đạo đức nghề nghiệp trong lĩnh vực công nghệ mạng và Internet of Things (IoT) được hiểu là tập hợp các nguyên tắc, chuẩn mực và giá trị đạo đức mà kỹ sư cần tuân thủ trong quá trình nghiên cứu, thiết kế, triển khai và vận hành các hệ thống kết nối. Khác với các lĩnh vực kỹ thuật truyền thống, IoT đặt ra những thách thức đạo đức đặc thù do tính chất kết nối liên tục, thu thập dữ liệu quy mô lớn từ cảm biến và thiết bị, xử lý thời gian thực, và khả năng tác động trực tiếp đến đời sống con người.
+
+Theo định nghĩa của IEEE (Institute of Electrical and Electronics Engineers), đạo đức nghề nghiệp trong IoT bao gồm cam kết về tính trung thực trong nghiên cứu, trách nhiệm đảm bảo an toàn hệ thống, tôn trọng quyền riêng tư dữ liệu, tuân thủ tiêu chuẩn kỹ thuật và pháp luật, cũng như ý thức về tác động xã hội của công nghệ. Đối với kỹ sư IoT và phát triển ứng dụng di động, những nguyên tắc này không chỉ là yêu cầu đạo đức mà còn là điều kiện tiên quyết để hệ thống hoạt động an toàn, đáng tin cậy và bền vững.
+
+Trong bối cảnh các hệ thống IoT ngày càng phổ biến, từ nhà thông minh, thành phố thông minh đến giao thông thông minh và quản lý năng lượng, vai trò của đạo đức nghề nghiệp trở nên quan trọng hơn bao giờ hết. Một quyết định thiết kế sai lầm hoặc thiếu trách nhiệm có thể dẫn đến hậu quả nghiêm trọng như rò rỉ dữ liệu cá nhân, gián đoạn dịch vụ thiết yếu, hoặc thậm chí gây nguy hiểm đến tính mạng con người.
+
+1.2. Vai trò của đạo đức nghề nghiệp đối với kỹ sư IoT và phát triển ứng dụng
+
+Trong bối cảnh chuyển đổi số và phát triển hạ tầng thông minh, kỹ sư IoT đóng vai trò then chốt trong việc kết nối thế giới vật lý với không gian số. Hệ thống IoT hiện đại không chỉ đơn thuần là các thiết bị kết nối mạng, mà là một hệ sinh thái phức tạp bao gồm: tầng cảm biến và thiết bị đầu cuối (sensors, actuators), tầng mạng truyền thông (MQTT, HTTP/HTTPS, WebSocket), tầng xử lý dữ liệu (backend server, database), và tầng ứng dụng người dùng (mobile app, web dashboard).
+
+Đối với hệ thống kết nối mạng diện rộng, kỹ sư phải đảm bảo rằng kiến trúc mạng được thiết kế với khả năng chịu lỗi cao, có cơ chế dự phòng khi một phần hệ thống gặp sự cố. Việc lựa chọn giao thức truyền thông (MQTT cho IoT devices, RESTful API cho mobile app) không chỉ dựa trên hiệu năng kỹ thuật mà còn phải xem xét khía cạnh bảo mật, độ trễ thấp, và khả năng mở rộng. Một hệ thống IoT quy mô lớn có thể kết nối hàng nghìn thiết bị, do đó việc thiết kế kiến trúc phải đảm bảo tính ổn định, tránh tình trạng quá tải hoặc điểm nghẽn cổ chai.
+
+Trong quá trình thu thập, truyền và xử lý dữ liệu thời gian thực, kỹ sư phải đối mặt với nhiều vấn đề đạo đức phức tạp. Cảm biến IoT có khả năng thu thập dữ liệu liên tục 24/7: trạng thái pin (voltage, temperature, SoC, SoH), trạng thái slot (có pin hay trống, khóa hay mở), vị trí GPS của người dùng khi tìm trạm, và thông tin giao dịch. Kỹ sư có trách nhiệm thiết kế hệ thống sao cho chỉ thu thập dữ liệu cần thiết cho mục đích nghiệp vụ, không thu thập thông tin dư thừa hoặc xâm phạm quyền riêng tư. Dữ liệu thu thập được phải được mã hóa trong quá trình truyền tải (TLS/SSL cho HTTPS, TLS cho MQTT), lưu trữ an toàn và chỉ được truy cập bởi những người có thẩm quyền.
+
+Trong bối cảnh chuyển đổi số và phát triển hạ tầng thông minh, các hệ thống IoT đang trở thành nền tảng cho các dịch vụ thiết yếu như quản lý giao thông, cung cấp năng lượng, và dịch vụ di động. Kỹ sư cần nhận thức rõ rằng công việc của mình không chỉ mang tính kỹ thuật mà còn có tác động sâu rộng đến xã hội.
+
+1.3. Các rủi ro đạo đức trong nghiên cứu công nghệ mạng và IoT
+
+Hệ thống IoT đối mặt với nhiều rủi ro đạo đức đặc thù. Về an toàn mạng, các thiết bị IoT thường có tài nguyên tính toán hạn chế (microcontroller với RAM/Flash nhỏ), khó triển khai các cơ chế bảo mật phức tạp, dễ trở thành mục tiêu của các cuộc tấn công mạng. Một mạng botnet được tạo ra từ hàng nghìn thiết bị IoT bị xâm nhập có thể gây ra các cuộc tấn công DDoS quy mô lớn. Kỹ sư có trách nhiệm thiết kế các cơ chế bảo mật ngay từ đầu (security by design), bao gồm xác thực thiết bị (device authentication), mã hóa dữ liệu, cập nhật firmware an toàn (OTA updates với signature verification), và giám sát bất thường.
+
+Về dữ liệu, hệ thống IoT thu thập khối lượng dữ liệu khổng lồ từ môi trường và người dùng. Trong hệ thống EV-Swap, dữ liệu bao gồm: trạng thái kỹ thuật của pin (voltage, current, temperature từ BMS), trạng thái slot (sensor phát hiện pin có mặt), vị trí GPS người dùng, và lịch sử giao dịch. Việc lưu trữ, xử lý và chia sẻ dữ liệu này đặt ra nhiều câu hỏi đạo đức: Dữ liệu nào được phép thu thập? Lưu trữ trong bao lâu? Ai có quyền truy cập? Có được chia sẻ cho bên thứ ba không? Kỹ sư cần tuân thủ các quy định về bảo vệ dữ liệu cá nhân như Nghị định 13/2023/NĐ-CP của Việt Nam, đồng thời áp dụng các kỹ thuật như ẩn danh hóa dữ liệu, differential privacy để bảo vệ quyền riêng tư người dùng.
+
+Về độ tin cậy hệ thống, nhiều ứng dụng IoT yêu cầu hoạt động liên tục với độ sẵn sàng cao. Một hệ thống quản lý trạm sạc pin không thể chấp nhận downtime khi có hàng trăm người dùng đang cần đổi pin. Kỹ sư phải thiết kế hệ thống với kiến trúc dự phòng, cơ chế failover tự động, và khả năng hoạt động offline khi mất kết nối mạng tạm thời.
+
+2. CÁC NGUYÊN TẮC ĐẠO ĐỨC NGHỀ NGHIỆP TRONG NGHIÊN CỨU VÀ PHÁT TRIỂN HỆ THỐNG IOT
+
+2.1. Trung thực trong nghiên cứu, mô phỏng, đo đạc và báo cáo kết quả
+
+Trung thực là nền tảng của mọi hoạt động nghiên cứu khoa học, đặc biệt quan trọng trong lĩnh vực IoT nơi kết quả nghiên cứu có thể ảnh hưởng trực tiếp đến các quyết định triển khai hệ thống thực tế. Kỹ sư cần đảm bảo rằng mọi dữ liệu thu thập từ cảm biến, kết quả mô phỏng mạng, và phép đo hiệu năng hệ thống đều được thực hiện một cách chính xác, khách quan và có thể tái lập.
+
+Trong giai đoạn nghiên cứu và lựa chọn công nghệ, cần so sánh các giải pháp một cách công bằng. Ví dụ, việc chọn React Native thay vì Flutter cho mobile app, chọn PostgreSQL thay vì MongoDB cho database, chọn MQTT thay vì HTTP cho IoT communication cần có lý do kỹ thuật rõ ràng dựa trên yêu cầu dự án (cross-platform, ACID compliance, lightweight protocol), không phải chỉ vì quen thuộc.
+
+Trong giai đoạn phát triển và kiểm thử, khi đo hiệu năng ứng dụng (API response time, battery consumption, memory usage), cần ghi rõ điều kiện đo đạc (thiết bị nào, network condition ra sao, số lượng concurrent users) và lặp lại đủ số lần để đảm bảo tính thống kê. Khi thử nghiệm tính năng thanh toán MoMo, nếu gặp lỗi callback không ổn định trong môi trường sandbox, cần ghi nhận đầy đủ vấn đề này trong báo cáo thay vì che giấu.
+
+Trong báo cáo kết quả đồ án, cần trình bày đầy đủ cả những thành công lẫn hạn chế. Nếu hệ thống hoạt động tốt trên Android nhưng có vấn đề trên iOS, nếu một tính năng IoT chỉ implement ở mức API giả lập (mock) chưa có hardware thật, cần báo cáo trung thực và phân tích nguyên nhân. Việc thừa nhận hạn chế không làm giảm giá trị nghiên cứu mà thể hiện tính chuyên nghiệp.
+
+2.2. Đảm bảo an toàn, độ tin cậy và ổn định của hệ thống IoT
+
+Hệ thống IoT thường hoạt động trong môi trường không giám sát, phục vụ các ứng dụng quan trọng, do đó việc đảm bảo an toàn và độ tin cậy là trách nhiệm bắt buộc của kỹ sư. An toàn ở đây bao gồm cả an toàn vật lý (thiết bị không gây nguy hiểm), an toàn điện (không gây cháy nổ), và an toàn thông tin (không bị hack).
+
+Về an toàn vật lý và điện, nếu triển khai phần cứng IoT thật, cần đảm bảo các thiết bị tuân thủ tiêu chuẩn an toàn điện, không phát ra bức xạ vượt ngưỡng. Đối với hệ thống điều khiển slot chứa pin (solenoid lock, relay), cần có các biện pháp an toàn như giới hạn dòng, ngắt mạch tự động, optocoupler cách ly để tránh nhiễu và ngắn mạch.
+
+Về độ tin cậy giao dịch, đặc biệt quan trọng với ứng dụng có thanh toán. Khi thực hiện giao dịch đổi pin, hệ thống phải đảm bảo tính nguyên tử (atomicity): trừ tiền từ ví, cập nhật trạng thái pin cũ/mới, ghi transaction log, cập nhật slot trạm phải thành công hoặc rollback toàn bộ nếu có lỗi. Sử dụng Prisma transaction với ACID properties của PostgreSQL để đảm bảo điều này. Không thể chấp nhận tình trạng trừ tiền nhưng không cập nhật pin.
+
+Về xử lý lỗi, ứng dụng cần xử lý gracefully các trường hợp: mất kết nối mạng (hiển thị thông báo rõ ràng, cho phép retry), server error (hiển thị lỗi thân thiện thay vì crash), invalid input (validation và feedback ngay lập tức). Cần có offline support: cache dữ liệu đã tải để người dùng vẫn xem được khi offline.
+
+2.3. Bảo mật thông tin, quyền riêng tư dữ liệu người dùng và thiết bị
+
+Bảo mật là một trong những thách thức lớn nhất của IoT do tính chất phân tán, đa dạng thiết bị và kết nối liên tục với Internet. Kỹ sư cần áp dụng nguyên tắc "security by design" và "privacy by design" ngay từ giai đoạn thiết kế.
+
+Ở tầng thiết bị IoT (nếu triển khai), cần triển khai xác thực thiết bị để đảm bảo chỉ thiết bị hợp lệ mới được kết nối vào hệ thống. Có thể sử dụng certificate-based authentication, pre-shared key, hoặc API key. Firmware cần được ký số để tránh bị thay thế bởi firmware độc hại. Cơ chế cập nhật firmware (OTA - Over-The-Air) phải an toàn, có xác thực và mã hóa.
+
+Ở tầng mạng, dữ liệu truyền giữa thiết bị và server cần được mã hóa. Đối với MQTT, sử dụng MQTT over TLS. Đối với HTTP API, sử dụng HTTPS với certificate hợp lệ. Cần có cơ chế phát hiện và ngăn chặn các cuộc tấn công như man-in-the-middle, replay attack, spoofing.
+
+Ở tầng ứng dụng mobile, JWT token được lưu trong secure storage (Keychain trên iOS, EncryptedSharedPreferences trên Android), không lưu plain text trong AsyncStorage. Mật khẩu được hash bằng bcrypt với salt rounds 10 trước khi lưu database. Khi hiển thị thông tin nhạy cảm như số dư ví, có cơ chế che (blur) khi app vào background.
+
+Ở tầng backend API, mọi protected endpoints đều yêu cầu JWT token hợp lệ, verify signature và expiry, check quyền truy cập (user chỉ xem được dữ liệu của chính mình). Các IoT endpoints như /api/iot/battery/validate, /api/iot/slot/status-update yêu cầu X-API-Key header để xác thực thiết bị IoT.
+
+Về quyền riêng tư, tuân thủ các nguyên tắc: data minimization (chỉ thu thập username, số điện thoại, không cần CMND/địa chỉ), purpose limitation (chỉ dùng để xác thực, không bán cho bên thứ ba), storage limitation (xóa khi user yêu cầu), và transparency (chính sách bảo mật rõ ràng).
+
+2.4. Tuân thủ tiêu chuẩn kỹ thuật, quy định pháp luật và sở hữu trí tuệ
+
+Hệ thống IoT cần tuân thủ nhiều tiêu chuẩn kỹ thuật quốc tế và quy định pháp luật. Về tiêu chuẩn kỹ thuật, tùy theo lĩnh vực ứng dụng, hệ thống cần tuân thủ các chuẩn như:
+- Giao thức IoT: MQTT v3.1.1/v5.0, CoAP, HTTP/2
+- Mạng không dây: IEEE 802.11 (Wi-Fi), IEEE 802.15.4 (Zigbee), Bluetooth Low Energy, LoRaWAN
+- API design: RESTful API với HTTP methods chuẩn (GET, POST, PUT, DELETE), status codes chuẩn (200, 201, 400, 401, 404, 500)
+
+Về quy định pháp luật, hệ thống cần tuân thủ:
+- Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân
+- Luật An toàn thông tin mạng 2015
+- Quy định về thanh toán điện tử của Ngân hàng Nhà nước (đối với tích hợp MoMo)
+- Quy định về phổ tần số vô tuyến điện (nếu sử dụng wireless communication)
+
+Về sở hữu trí tuệ, khi sử dụng các thư viện mã nguồn mở, cần tuân thủ giấy phép:
+- React Native (MIT License): cho phép sử dụng thương mại miễn phí
+- Express.js (MIT License): tương tự
+- Prisma ORM (Apache License 2.0): cho phép sử dụng và phân phối
+- React Native Maps (MIT License): miễn phí sử dụng
+
+Khi tham khảo code từ Stack Overflow, GitHub, tutorial, cần ghi nhận nguồn gốc trong comments. Khi sử dụng icons, images, fonts, kiểm tra license trước khi dùng.
+
+2.5. Trách nhiệm nghề nghiệp của kỹ sư khi triển khai hệ thống IoT quy mô lớn
+
+Khi triển khai hệ thống IoT quy mô lớn phục vụ hàng nghìn người dùng, trách nhiệm của kỹ sư càng trở nên nặng nề. Cần có kế hoạch triển khai chi tiết: pilot testing trên quy mô nhỏ trước khi mở rộng, monitoring và alerting để phát hiện sự cố sớm (sử dụng Sentry cho error tracking, Firebase Analytics cho user behavior), và disaster recovery plan để xử lý các tình huống khẩn cấp.
+
+Cần duy trì documentation đầy đủ: API documentation (endpoints, parameters, responses), kiến trúc hệ thống, database schema, deployment guide. Điều này giúp người khác có thể tiếp tục bảo trì và phát triển.
+
+Cần có trách nhiệm với người dùng: cung cấp support kịp thời, lắng nghe feedback để cải tiến, và minh bạch về downtime hoặc maintenance.
+
+3. ÁP DỤNG ĐẠO ĐỨC NGHỀ NGHIỆP TRONG ĐỀ TÀI EV-SWAP
+
+3.1. Đạo đức trong thiết kế hệ thống IoT và ứng dụng di động
+
+Hệ thống EV-Swap là một ứng dụng kết hợp IoT và mobile technology, bao gồm: ứng dụng React Native cho người dùng cuối, backend Node.js + Express xử lý logic nghiệp vụ, cơ sở dữ liệu PostgreSQL lưu trữ thông tin, API endpoints cho IoT devices (hiện tại là mock/giả lập, có thể mở rộng thành hardware thật), và tích hợp với dịch vụ bên thứ ba (Google Maps, MoMo Payment).
+
+Kiến trúc được thiết kế theo mô hình phân lớp IoT chuẩn:
+- **Tầng Perception (Cảm biến & Thiết bị)**: Trong tương lai có thể triển khai cảm biến thật (RFID reader đọc UID pin, sensor phát hiện pin trong slot, relay điều khiển solenoid lock, cảm biến nhiệt độ/voltage từ BMS). Hiện tại được giả lập qua API endpoints.
+- **Tầng Network (Mạng truyền thông)**: MQTT broker (có thể dùng Mosquitto, HiveMQ) cho giao tiếp IoT devices với server, HTTPS cho mobile app gọi API.
+- **Tầng Processing (Xử lý dữ liệu)**: Backend Express xử lý business logic, Prisma ORM truy vấn PostgreSQL database.
+- **Tầng Application (Ứng dụng)**: React Native mobile app với UI/UX thân thiện.
+
+Quyết định sử dụng PostgreSQL thay vì NoSQL dựa trên yêu cầu ACID cho giao dịch tài chính. Quyết định sử dụng React Native thay vì native development dựa trên cross-platform và thời gian phát triển. Quyết định thiết kế API endpoints cho IoT (/api/iot/battery/validate, /api/iot/slot/status-update) để chuẩn bị cho việc tích hợp hardware thật trong tương lai.
+
+3.2. Minh bạch trong thu thập dữ liệu từ IoT devices và người dùng
+
+Hệ thống EV-Swap thu thập nhiều loại dữ liệu, cần được thực hiện minh bạch và có trách nhiệm:
+
+**Dữ liệu từ IoT devices (hiện tại giả lập, tương lai có thể thật):**
+- Trạng thái pin: UID (từ RFID), voltage, current, temperature, SoC (State of Charge), SoH (State of Health), số chu kỳ sạc. Dữ liệu này cần thiết để đảm bảo chỉ cung cấp pin tốt cho khách hàng, phát hiện pin hỏng cần bảo trì.
+- Trạng thái slot: có pin hay trống (từ sensor), khóa hay mở (từ relay feedback). Dữ liệu này cần thiết để quản lý inventory và đồng bộ với database.
+- Dữ liệu này được gửi lên server qua API /api/iot/slot/status-update, yêu cầu X-API-Key để xác thực.
+
+**Dữ liệu từ người dùng:**
+- Thông tin tài khoản: username, số điện thoại, mật khẩu (hash bằng bcrypt). Không thu thập CMND, địa chỉ nhà.
+- Dữ liệu vị trí GPS: chỉ sử dụng tạm thời khi người dùng mở bản đồ tìm trạm, không lưu lịch sử di chuyển.
+- Lịch sử giao dịch: thời gian, trạm, pin cũ/mới, số tiền. Cần thiết cho audit và thống kê.
+
+Chính sách bảo mật được hiển thị rõ ràng khi đăng ký, giải thích dữ liệu nào được thu thập, mục đích sử dụng, cam kết không chia sẻ cho bên thứ ba.
+
+3.3. Đảm bảo an toàn kỹ thuật cho người sử dụng và hệ thống
+
+An toàn là ưu tiên hàng đầu vì liên quan đến pin lithium-ion có nguy cơ cháy nổ nếu xử lý không đúng.
+
+**An toàn phần cứng IoT (thiết kế lý thuyết, chưa triển khai thật):**
+- Slot chứa pin: khóa cơ học (đảm bảo pin không rơi) + khóa điện tử solenoid (chỉ mở khi có lệnh hợp lệ từ server)
+- Mạch điều khiển: relay với optocoupler cách ly, nguồn điều khiển và nguồn relay tách biệt
+- Giám sát nhiệt độ pin: nếu >45°C, tự động ngắt sạc và cảnh báo
+- Pin SoH <70%: đánh dấu cần bảo trì, không cung cấp cho khách hàng
+
+**An toàn giao dịch:**
+- Kiểm tra đa lớp: user có pin cũ, số dư đủ, trạm có pin mới, slot trống
+- Prisma transaction đảm bảo atomicity: trừ tiền, cập nhật pin, ghi log, cập nhật slot đều thành công hoặc rollback toàn bộ
+- Logging đầy đủ mọi giao dịch với timestamp và userId để audit
+
+**An toàn xác thực:**
+- JWT token (7 ngày expiry), bcrypt hash password (salt rounds 10)
+- HTTPS cho mọi API calls
+- IoT endpoints yêu cầu X-API-Key
+- MoMo payment: HMAC-SHA256 signature verification
+
+**An toàn dữ liệu:**
+- JWT token lưu secure storage (không plain text)
+- Mật khẩu không lưu trên thiết bị
+- API chỉ trả về dữ liệu của user hiện tại (check userId trong token)
+
+3.4. Tránh sai lệch dữ liệu, gian lận thông tin và lạm dụng hệ thống
+
+**Ngăn chặn sai lệch dữ liệu cảm biến (thiết kế lý thuyết):**
+- Cảm biến nhiệt độ/voltage cần hiệu chuẩn định kỳ
+- Phát hiện bất thường: nếu một sensor báo giá trị khác biệt quá lớn so với các sensor khác, cảnh báo để kiểm tra
+- Dữ liệu từ cảm biến được validate trước khi lưu database
+
+**Ngăn chặn gian lận giao dịch:**
+- Mọi giao dịch yêu cầu JWT token hợp lệ (không thể gọi API ẩn danh)
+- Kiểm tra số dư ví trước khi cho phép đổi pin
+- Database transaction đảm bảo atomicity
+- Logging đầy đủ với timestamp và userId để audit
+- Monitoring bất thường: user đổi pin quá nhiều lần trong ngày
+
+**Ngăn chặn spam và abuse:**
+- Rate limiting cho endpoints nhạy cảm (login, register, payment)
+- Giới hạn 5 lần đăng nhập sai trong 15 phút, sau đó block IP tạm thời
+- Giới hạn số lần đổi pin trong ngày (ví dụ tối đa 10 lần)
+
+**Bảo vệ API:**
+- Protected endpoints yêu cầu JWT token
+- IoT endpoints yêu cầu X-API-Key
+- Public endpoints (GET /api/stations) có rate limiting
+
+3.5. Trách nhiệm với giao thông, năng lượng và môi trường
+
+**Tác động đến giao thông:**
+- Bố trí vị trí trạm: thuận tiện nhưng không cản trở giao thông
+- Thông tin chính xác về tình trạng trạm (có pin không, slot trống không) để tránh người dùng đến nơi mới phát hiện không đổi được
+
+**Tác động đến năng lượng:**
+- Hệ thống sạc pin tiêu thụ điện đáng kể
+- Thiết kế sạc thông minh: tối ưu vào khung giờ off-peak (điện giá thấp)
+- Có thể tích hợp solar panel để giảm phụ thuộc lưới điện
+- Nghiên cứu vehicle-to-grid (V2G): pin xe điện trả điện lại lưới khi cần
+
+**Quản lý vòng đời pin:**
+- Theo dõi SoH của từng pin
+- Pin <70% dung lượng: ngừng dùng cho xe điện, có thể tái sử dụng cho ứng dụng khác (lưu trữ năng lượng mặt trời)
+- Cuối cùng tái chế đúng quy trình để thu hồi lithium, cobalt, nickel
+
+4. TÁC ĐỘNG CỦA HỆ THỐNG EV-SWAP ĐẾN MÔI TRƯỜNG, XÃ HỘI VÀ NGÀNH NGHỀ
+
+4.1. Tác động môi trường
+
+Hệ thống EV-Swap đóng góp tích cực vào bảo vệ môi trường thông qua việc thúc đẩy sử dụng xe điện thay thế xe xăng. Xe điện không phát thải khí CO2, NOx, PM2.5 trong quá trình vận hành, giúp cải thiện chất lượng không khí đô thị. Theo nghiên cứu, một xe máy điện giảm khoảng 1 tấn CO2 mỗi năm so với xe xăng cùng loại. Nếu hệ thống EV-Swap giúp chuyển đổi 10,000 xe máy sang điện, sẽ giảm 10,000 tấn CO2 mỗi năm, tương đương trồng 450,000 cây xanh.
+
+Một trong những rào cản lớn nhất của xe điện là thời gian sạc pin lâu (2-4 giờ), gây bất tiện cho người dùng. Hệ thống đổi pin giải quyết vấn đề này bằng cách cho phép thay pin chỉ trong vài phút, tương tự như đổ xăng. Điều này loại bỏ "range anxiety" (lo lắng về quãng đường di chuyển) và khuyến khích nhiều người chuyển sang xe điện.
+
+Tuy nhiên, hệ thống cũng cần quản lý tác động môi trường tiêu cực. Pin lithium-ion chứa các kim loại nặng và hóa chất độc hại, nếu không xử lý đúng cách sẽ gây ô nhiễm đất và nước. Cần thiết kế quy trình quản lý vòng đời pin: theo dõi số chu kỳ sạc và SoH, khi pin xuống dưới 70% dung lượng thì ngừng sử dụng cho xe điện nhưng có thể tái sử dụng cho ứng dụng ít yêu cầu hơn (lưu trữ năng lượng mặt trời), và cuối cùng tái chế đúng quy trình để thu hồi lithium, cobalt, nickel.
+
+Về tiêu thụ năng lượng của hệ thống công nghệ: server backend và database tiêu thụ điện liên tục, cần tối ưu code để giảm CPU usage, sử dụng caching để giảm database queries. Nếu triển khai IoT devices thật, cần thiết kế phần cứng tiết kiệm điện (sleep mode, low-power MCU).
+
+4.2. Tác động xã hội
+
+Hệ thống EV-Swap mang lại nhiều lợi ích xã hội thiết thực:
+
+**Nâng cao trải nghiệm người dùng:**
+- Tiết kiệm thời gian (đổi pin nhanh thay vì chờ sạc)
+- Tiện lợi (tìm trạm qua bản đồ, thanh toán tự động qua ví điện tử)
+- An tâm (luôn có pin dự phòng, không lo hết điện giữa đường)
+
+**Giảm chi phí:**
+- Thuê pin thay vì mua pin giảm chi phí ban đầu (pin chiếm 30-40% giá xe)
+- Trả phí đổi pin theo nhu cầu, linh hoạt hơn sở hữu pin
+
+**Tạo việc làm:**
+- Nhân viên vận hành trạm, kỹ thuật viên bảo trì pin và thiết bị IoT
+- Nhân viên chăm sóc khách hàng, kỹ sư phát triển hệ thống
+- Công việc trong lĩnh vực công nghệ xanh, phù hợp xu hướng bền vững
+
+**Công bằng tiếp cận:**
+- Hệ thống cần phủ sóng đều khắp, không chỉ trung tâm thành phố
+- Giá dịch vụ hợp lý để người thu nhập thấp có thể tiếp cận
+- Giao diện đơn giản, hỗ trợ đa ngôn ngữ (tiếng Việt, tiếng Anh)
+- Thiết kế accessibility cho người khuyết tật (màu sắc tương phản cao, font size lớn)
+
+4.3. Tác động đến ngành nghề kỹ thuật
+
+Hệ thống EV-Swap đại diện cho xu hướng mới: sự hội tụ của IoT, mobile development, backend engineering, và green technology. Điều này tạo ra yêu cầu mới cho kỹ sư: không chỉ giỏi một lĩnh vực mà cần hiểu toàn bộ stack (React Native, Node.js, Express, Prisma, PostgreSQL, MQTT, IoT devices).
+
+Yêu cầu đạo đức nghề nghiệp ngày càng cao: kỹ sư cần hiểu biết về quyền riêng tư, bảo mật, quy định pháp luật, và tác động xã hội. Các trường đại học cần cập nhật chương trình đào tạo để bao gồm software ethics, IoT security, và sustainable development.
+
+Hệ thống thúc đẩy nghiên cứu trong nhiều lĩnh vực: tối ưu hóa React Native performance, thiết kế RESTful API scalable, database indexing, MQTT broker optimization, battery health prediction bằng machine learning, và lightweight cryptography cho IoT devices.
+
+Đối với sinh viên thực hiện đồ án, dự án EV-Swap là cơ hội học hỏi quý giá về cách áp dụng kiến thức lý thuyết vào thực tế, làm việc với nhiều công nghệ khác nhau, và hiểu rõ trách nhiệm của kỹ sư đối với xã hội.
+
+5. NHẬN XÉT VÀ KẾT LUẬN
+
+Đạo đức nghề nghiệp không phải là một yêu cầu hình thức hay phụ trội mà là yếu tố bắt buộc và xuyên suốt trong toàn bộ quá trình nghiên cứu, thiết kế, triển khai và vận hành hệ thống IoT và ứng dụng di động. Qua việc phát triển hệ thống EV Battery Swapping, các nguyên tắc đạo đức đã được áp dụng cụ thể vào từng giai đoạn và từng thành phần của hệ thống.
+
+Nguyên tắc trung thực được thể hiện qua việc báo cáo đầy đủ cả thành công lẫn hạn chế của hệ thống (ví dụ: phần IoT hiện tại chỉ ở mức API giả lập, chưa có hardware thật), ghi nhận nguồn tham khảo rõ ràng (React Native documentation, Express.js guides, MQTT specifications, Stack Overflow solutions), và minh bạch về khả năng cũng như giới hạn của giải pháp.
+
+Nguyên tắc đảm bảo an toàn và chất lượng được triển khai thông qua: JWT authentication, bcrypt password hashing, Prisma transaction với ACID properties cho giao dịch tài chính, error handling toàn diện, và thiết kế an toàn cho phần cứng IoT (mặc dù chưa triển khai thật nhưng đã có trong thiết kế lý thuyết).
+
+Nguyên tắc bảo mật và quyền riêng tư được áp dụng qua: HTTPS cho mọi API calls, secure storage cho JWT token, chính sách thu thập dữ liệu tối thiểu (chỉ username và số điện thoại, không thu thập CMND/địa chỉ), không lưu lịch sử di chuyển GPS, và tích hợp MoMo payment an toàn với signature verification.
+
+Nguyên tắc tuân thủ pháp luật và tiêu chuẩn được thực hiện qua: nghiên cứu và áp dụng Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân, thiết kế RESTful API theo chuẩn, sử dụng thư viện mã nguồn mở với giấy phép hợp lệ (MIT, Apache), và tuân thủ các tiêu chuẩn IoT (MQTT, HTTP/2) nếu triển khai phần cứng.
+
+Hệ thống EV-Swap không chỉ là một đồ án kỹ thuật mà còn có ý nghĩa xã hội sâu rộng: đóng góp vào giảm ô nhiễm không khí (giảm 10,000 tấn CO2/năm nếu chuyển đổi 10,000 xe), thúc đẩy giao thông xanh, nâng cao trải nghiệm người dùng xe điện, giảm chi phí sở hữu xe điện, tạo việc làm trong lĩnh vực công nghệ xanh, và thúc đẩy nghiên cứu phát triển trong nhiều lĩnh vực liên quan.
+
+Đối với sinh viên chuyên ngành công nghệ thông tin, IoT và viễn thông, việc rèn luyện ý thức đạo đức ngay từ giai đoạn thực hiện đồ án tốt nghiệp là nền tảng quan trọng để trở thành kỹ sư có trách nhiệm và chuyên nghiệp. Trong thời đại mà công nghệ IoT và ứng dụng di động đang định hình tương lai của xã hội, từ nhà thông minh, thành phố thông minh đến giao thông thông minh và năng lượng sạch, trách nhiệm của kỹ sư càng trở nên nặng nề.
+
+Mỗi quyết định thiết kế (chọn PostgreSQL vì ACID, chọn React Native vì cross-platform, thiết kế API cho IoT để chuẩn bị tương lai), mỗi dòng code (JWT authentication, bcrypt hashing, Prisma transaction), mỗi API endpoint (/api/iot/battery/validate, /api/transactions/start-swap) đều có thể ảnh hưởng đến hàng nghìn hoặc hàng triệu người dùng. Chính vì vậy, đạo đức nghề nghiệp không chỉ là kiến thức cần học mà phải trở thành một phần trong tư duy và hành động của mỗi kỹ sư.
+
+Kết luận, đạo đức nghề nghiệp là kim chỉ nam cho mọi hoạt động nghiên cứu và phát triển hệ thống IoT và ứng dụng di động. Việc tuân thủ các nguyên tắc đạo đức không chỉ giúp xây dựng hệ thống an toàn, đáng tin cậy và bền vững, mà còn góp phần xây dựng niềm tin của xã hội đối với công nghệ, thúc đẩy sự phát triển lành mạnh của ngành, và tạo ra giá trị thực sự cho con người và môi trường. Đây chính là sứ mệnh và trách nhiệm cao cả của mỗi kỹ sư IoT và phần mềm đối với nghề nghiệp và xã hội.

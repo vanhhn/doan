@@ -169,19 +169,24 @@ const WalletScreen = () => {
         setAmount("");
         setPaymentMethod(null);
 
-        // Ưu tiên deeplink để mở MoMo app
-        const urlToOpen = response.data.deeplink || response.data.paymentUrl;
+        const deeplink = response.data.deeplink;
+        const paymentUrl = response.data.paymentUrl;
+        const orderId = response.data.orderId;
 
-        if (urlToOpen) {
-          // Kiểm tra xem có thể mở deeplink không
-          const canOpen = await Linking.canOpenURL(urlToOpen);
+        console.log("🔗 MoMo Deeplink:", deeplink);
+        console.log("🌐 MoMo PaymentUrl:", paymentUrl);
 
-          if (canOpen) {
-            // Mở MoMo app bằng deeplink
-            await Linking.openURL(urlToOpen);
+        // Ưu tiên mở MoMo app bằng deeplink
+        if (deeplink) {
+          try {
+            console.log("🚀 Attempting to open MoMo app with deeplink...");
+            
+            // Thử mở deeplink trực tiếp (không cần check canOpenURL)
+            await Linking.openURL(deeplink);
+            
+            console.log("✅ Successfully opened MoMo app!");
 
             // Auto-polling để check payment status mỗi 2 giây
-            const orderId = response.data.orderId;
             let pollCount = 0;
             const maxPolls = 30; // Poll tối đa 60 giây (30 x 2s)
 
@@ -189,10 +194,7 @@ const WalletScreen = () => {
               pollCount++;
 
               try {
-                // Refresh profile để check balance có thay đổi không
-                const updatedProfile = await refetchProfile();
-
-                // Hoặc kiểm tra payment status
+                // Kiểm tra payment status
                 const completeResponse = await customerAPI.manualCompleteMoMo(
                   orderId
                 );
@@ -221,16 +223,24 @@ const WalletScreen = () => {
                 refetchProfile(); // Refresh lần cuối
               }
             }, 2000); // Poll mỗi 2 giây
-          } else {
+          } catch (error) {
+            console.error("❌ Cannot open deeplink, fallback to WebView:", error);
+            
             // Fallback: Sử dụng WebView nếu không mở được deeplink
             navigation.navigate("MoMoPayment", {
-              paymentUrl: response.data.paymentUrl,
-              orderId: response.data.orderId,
+              paymentUrl: paymentUrl,
+              orderId: orderId,
               amount: amountValue,
             });
           }
         } else {
-          Alert.alert(t("common.error"), t("common.paymentUrlError"));
+          // Không có deeplink, dùng WebView
+          console.log("⚠️ No deeplink available, using WebView");
+          navigation.navigate("MoMoPayment", {
+            paymentUrl: paymentUrl,
+            orderId: orderId,
+            amount: amountValue,
+          });
         }
       } else {
         Alert.alert(

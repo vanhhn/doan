@@ -1,0 +1,2737 @@
+================================================================================
+CHƯƠNG 2: PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG
+Phần 2.4: THIẾT KẾ BACKEND VÀ API
+Phần thực hiện: Ngô Việt Anh
+================================================================================
+
+2.4.1. KIẾN TRÚC BACKEND
+
+2.4.1.1. Tổng quan kiến trúc phân lớp
+
+Hệ thống EV-Swap được thiết kế với hai backend riêng biệt, mỗi backend phục vụ một nhóm đối tượng người dùng khác nhau: Mobile Backend dành cho khách hàng sử dụng ứng dụng di động, và Admin Backend dành cho quản trị viên quản lý hệ thống qua giao diện web. Cả hai backend đều kết nối đến cùng một cơ sở dữ liệu PostgreSQL nhưng có sự khác biệt về kiến trúc, phương thức xác thực và chức năng.
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      HỆ THỐNG EV-SWAP BACKEND                           │
+├─────────────────────────────────┬───────────────────────────────────────┤
+│      MOBILE BACKEND             │         ADMIN WEB BACKEND             │
+│    (ev-swap-backend)            │        (ev-swap-admin)                │
+├─────────────────────────────────┼───────────────────────────────────────┤
+│  Users: Customers               │  Users: Administrators                │
+│  Auth: JWT Tokens (stateless)   │  Auth: Session-based (stateful)       │
+│  ORM: Prisma                    │  DB Driver: pg (node-postgres)        │
+│  URL: /api/*                    │  URL: / (root paths)                  │
+└─────────────────┬───────────────┴───────────────┬───────────────────────┘
+                  │                               │
+                  └───────────────┬───────────────┘
+                                  │
+                      ┌───────────▼───────────┐
+                      │  PostgreSQL Database  │
+                      │    (Heroku Postgres)  │
+                      └───────────────────────┘
+
+**A. MOBILE BACKEND ARCHITECTURE (ev-swap-backend)**
+
+Backend dành cho Mobile App được xây dựng theo mô hình phân lớp (Layered 
+Architecture), tách biệt rõ ràng giữa các concerns:
+
+```
+┌─────────────────────────────────────────┐
+│     HTTP Requests (Mobile App)          │
+│  - Customer registration/login          │
+│  - Battery swap transactions            │
+│  - Wallet top-up (MoMo)                 │
+│  - History & Profile                    │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│         Routes Layer                    │
+│  - /api/auth/*                          │
+│  - /api/stations/*                      │
+│  - /api/transactions/*                  │
+│  - /api/me/*                            │
+│  - /api/payment/*                       │
+│  - /api/iot/*                           │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│         Middleware Layer                │
+│  - verifyToken (JWT)                    │
+│  - Authorization (customer only)        │
+│  - Request validation                   │
+│  - CORS handling                        │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│         Controllers Layer               │
+│  - Business logic                       │
+│  - Data validation                      │
+│  - Error handling                       │
+│  - MoMo payment integration             │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│         Prisma Client (ORM)             │
+│  - Type-safe database queries           │
+│  - Transaction management (ACID)        │
+│  - Schema migrations                    │
+│  - Relations & eager loading            │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│      PostgreSQL Database (Heroku)       │
+│  - 12 business tables                   │
+│  - Referential integrity                │
+│  - Indexes for performance              │
+└─────────────────────────────────────────┘
+```
+
+**B. ADMIN WEB BACKEND ARCHITECTURE (ev-swap-admin)**
+
+Backend dành cho Admin Web sử dụng kiến trúc đơn giản hơn, tập trung vào 
+CRUD operations và reporting:
+
+```
+┌─────────────────────────────────────────┐
+│     HTTP Requests (Admin Web)           │
+│  - Dashboard statistics                 │
+│  - Station/Battery/Customer management  │
+│  - View feedback & reservations         │
+│  - Excel import/export                  │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│       Express.js Routes + Views         │
+│  - / (SignIn.html)                      │
+│  - /Controller (Dashboard)              │
+│  - /Station, /Battery, /CustomerManager │
+│  - /Feedback, /ForgetPassword           │
+│  - POST /login, /Controller, etc.       │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│      Controllers (Inline in server.js)  │
+│  - Complex SQL queries với subqueries   │
+│  - Aggregations & statistics            │
+│  - Validation logic (delete station)    │
+│  - File upload (Multer + XLSX)          │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│      pg Driver (node-postgres)          │
+│  - Raw SQL queries                      │
+│  - Connection pooling                   │
+│  - Manual transaction handling          │
+│  - Flexibility cho complex queries      │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│      PostgreSQL Database (Heroku)       │
+│  - Same database as Mobile Backend      │
+│  - Queries admins table                 │
+│  - Aggregations for dashboard           │
+└─────────────────────────────────────────┘
+```
+
+**SO SÁNH 2 BACKENDS:**
+
+| Aspect | Mobile Backend | Admin Backend |
+|--------|----------------|---------------|
+| **Framework** | Express.js + Prisma ORM | Express.js + pg driver |
+| **Users** | Customers (table: customers) | Admins (table: admins) |
+| **Authentication** | JWT tokens (stateless) | Session-based (stateful) |
+| **Authorization** | verifyToken middleware | No middleware (manual check) |
+| **Database Access** | Prisma (type-safe, migrations) | pg (raw SQL, flexible) |
+| **Query Style** | prisma.customer.findMany() | pool.query('SELECT...') |
+| **Transactions** | prisma.$transaction() | BEGIN/COMMIT manual |
+| **Base URL** | /api/* | / (root paths) |
+| **Deployment** | Heroku (ev-swap-backend-2025) | Heroku (ev-swap-admin-2025) |
+| **Use Case** | Real-time battery swaps | Dashboard & management |
+| **Complexity** | High (ACID, payment gateway) | Medium (CRUD, reporting) |
+
+**LÝ DO TÁCH BIỆT:**
+
+1. **Security**: Admin không nên share authentication với customers
+2. **Scalability**: Mobile backend có thể scale độc lập (nhiều users hơn)
+3. **Technology**: Prisma tốt cho CRUD, pg tốt cho complex analytics
+4. **Deployment**: Có thể deploy/rollback riêng mà không ảnh hưởng nhau
+5. **Permissions**: Admin có quyền cao hơn (DELETE, UPDATE bất kỳ record nào)
+
+2.4.1.2. Cấu trúc thư mục Mobile Backend
+
+```
+ev-swap-backend/
+├── src/
+│   ├── index.js                  # Entry point, khởi tạo Express app
+│   ├── config/
+│   │   └── database.js           # Prisma client initialization
+│   ├── routes/
+│   │   ├── auth.routes.js        # /api/auth/*
+│   │   ├── station.routes.js     # /api/stations/*
+│   │   ├── transaction.routes.js # /api/transactions/*
+│   │   ├── customer.routes.js    # /api/me/*
+│   │   ├── feedback.routes.js    # /api/feedbacks/*
+│   │   └── iot.routes.js         # /api/iot/*
+│   ├── controllers/
+│   │   ├── auth.controller.js
+│   │   ├── station.controller.js
+│   │   ├── transaction.controller.js
+│   │   ├── customer.controller.js
+│   │   └── iot.controller.js
+│   └── middleware/
+│       ├── auth.middleware.js    # verifyToken
+│       └── iot-auth.middleware.js # verifyIoTAuth
+├── prisma/
+│   └── schema.prisma
+├── .env                          # DATABASE_URL, JWT_SECRET
+└── package.json
+```
+
+2.4.1.3. Entry Point Mobile Backend - index.js
+
+**File:** ev-swap-backend/src/index.js
+
+```javascript
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
+
+const authRoutes = require('./routes/auth.routes');
+const stationRoutes = require('./routes/station.routes');
+const transactionRoutes = require('./routes/transaction.routes');
+const customerRoutes = require('./routes/customer.routes');
+const iotRoutes = require('./routes/iot.routes');
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/stations', stationRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/me', customerRoutes);
+app.use('/api/iot', iotRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    success: false, 
+    message: 'Internal Server Error' 
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`EV-Swap Backend running on port ${PORT}`);
+});
+```
+
+2.4.1.4. Cấu trúc thư mục Admin Backend
+
+**ev-swap-admin** - Backend cho Admin Web (Express.js + pg driver)
+
+```
+ev-swap-admin/
+├── server.js                   # Main Express app (all-in-one)
+├── package.json                # Dependencies: express, pg, bcryptjs, multer, xlsx
+├── Procfile                    # Heroku deployment: "web: node server.js"
+├── Database.sql                # SQL schema reference
+├── uploads/                    # Temporary folder for file uploads
+├── SignIn.html                 # Admin login page
+├── ForgetPassword.html         # Reset password flow
+├── Controller.html             # Dashboard với Chart.js
+├── Station.html                # Station management table
+├── Battery.html                # Battery management + Excel import
+├── CustomerManager.html        # Customer list & reservations
+└── Feedback.html               # Customer feedback view
+```
+
+**Key Differences từ Mobile Backend:**
+- **Single file structure**: server.js chứa tất cả routes, controllers
+- **No Prisma**: Dùng pg driver để chạy raw SQL
+- **HTML files**: Serve static HTML pages thay vì JSON API
+- **No separation**: Routes và controllers trong cùng file
+- **Simple auth**: Session-based, không dùng JWT
+
+2.4.1.5. Entry Point Admin Backend - server.js
+
+**File:** ev-swap-admin/server.js (Main structure)
+
+```javascript
+import express from 'express';
+import pkg from 'pg';
+import bcrypt from 'bcryptjs';
+import multer from 'multer';
+import XLSX from 'xlsx';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const { Pool } = pkg;
+const app = express();
+
+// Database connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? {
+    rejectUnauthorized: false  // Required for Heroku Postgres
+  } : false
+});
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// File upload config
+const upload = multer({ dest: 'uploads/' });
+
+// Serve HTML pages
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'SignIn.html'));
+});
+
+app.get('/Controller', (req, res) => {
+  res.sendFile(path.join(__dirname, 'Controller.html'));
+});
+
+app.get('/Station', (req, res) => {
+  res.sendFile(path.join(__dirname, 'Station.html'));
+});
+
+// Admin Authentication
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  
+  const result = await pool.query(
+    'SELECT * FROM admins WHERE username = $1',
+    [username]
+  );
+
+  if (result.rows.length === 0) {
+    return res.status(401).json({
+      success: false,
+      message: 'Tài khoản không tồn tại!'
+    });
+  }
+
+  const user = result.rows[0];
+  const validPassword = await bcrypt.compare(password, user.password_hash);
+
+  if (!validPassword) {
+    return res.status(401).json({
+      success: false,
+      message: 'Mật khẩu không đúng!'
+    });
+  }
+
+  res.json({
+    success: true,
+    full_name: user.full_name,
+    role: user.role,
+    message: 'Đăng nhập thành công!'
+  });
+});
+
+// Dashboard Statistics
+app.post('/Controller', async (req, res) => {
+  const query = `
+    SELECT
+      (SELECT COUNT(*) FROM stations) AS total_stations,
+      (SELECT COUNT(*) FROM stations WHERE status = 'active') AS ready_stations,
+      (SELECT COUNT(*) FROM slots WHERE status = 'full') AS good_batteries,
+      (SELECT COUNT(*) FROM batteries) AS total_batteries,
+      (SELECT COUNT(*) FROM customers 
+       WHERE EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM CURRENT_DATE)
+       AND EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+      ) AS new_customers,
+      (SELECT COUNT(*) FROM stations WHERE status = 'maintenance') AS maintenance_needed;
+  `;
+
+  const result = await pool.query(query);
+  const data = result.rows[0];
+
+  res.json({
+    totalStations: parseInt(data.total_stations),
+    readystations: parseInt(data.ready_stations),
+    goodbatteries: parseInt(data.good_batteries),
+    batteriesTotal: parseInt(data.total_batteries),
+    newCustomers: parseInt(data.new_customers),
+    maintenance: parseInt(data.maintenance_needed)
+  });
+});
+
+// Station Management APIs (inline controllers)
+app.get('/Station/table', async (req, res) => { /* ... */ });
+app.put('/Station/update/:id', async (req, res) => { /* ... */ });
+app.delete('/Station/delete/:id', async (req, res) => { /* ... */ });
+
+// Battery Management APIs
+app.get('/Battery/table', async (req, res) => { /* ... */ });
+app.post('/Battery/import', upload.single('file'), async (req, res) => { /* ... */ });
+
+// Customer & Feedback
+app.get('/CustomerManager/table', async (req, res) => { /* ... */ });
+app.get('/Feedback/table', async (req, res) => { /* ... */ });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Admin Backend running on port ${PORT}`);
+});
+```
+
+**Lưu ý về Admin Backend:**
+- **All-in-one file**: Tất cả code trong server.js (không tách routes/controllers)
+- **Raw SQL**: Dùng pool.query() trực tiếp, không có ORM
+- **Complex queries**: Subqueries, JOINs, aggregations cho dashboard
+- **HTML serving**: res.sendFile() thay vì JSON responses
+- **No middleware**: Không có auth middleware như Mobile Backend
+- **Session-based**: Không dùng JWT tokens
+
+2.4.2. CHI TIẾT CÁC API ENDPOINTS
+
+**Cấu trúc phần này:**
+
+Phần 2.4.2 được chia thành 2 nhóm API riêng biệt:
+
+**A. Mobile Backend APIs (Sections 2.4.2.1, 2.4.2.6, 2.4.2.3-2.4.2.5):**
+- Base URL: https://ev-swap-backend-2025-b268b8b1f366.herokuapp.com
+- Prefix: /api/*
+- Authentication: JWT Bearer token trong header
+- Response format: JSON
+- Users: Customers (khách hàng)
+
+**B. Admin Backend APIs (Sections 2.4.2.2-2.4.2.5 đánh dấu "Admin"):**
+- Base URL: https://ev-swap-admin-2025.herokuapp.com (example)
+- Prefix: / (root paths)
+- Authentication: Session-based (không có JWT)
+- Response format: JSON hoặc HTML
+- Users: Admins (quản trị viên)
+
+2.4.2.1. Customer Authentication APIs (Mobile Backend)
+
+**Base URL:** /api/auth/*
+**Authentication Required:** No (public endpoints)
+**Purpose:** Đăng ký, đăng nhập cho khách hàng qua Mobile App
+
+=== POST /api/auth/register ===
+Đăng ký tài khoản khách hàng mới.
+
+Request Body:
+```json
+{
+  "fullName": "Nguyễn Văn A",
+  "username": "nguyenvana",
+  "password": "password123",
+  "phone": "0987654321",
+  "email": "nguyenvana@example.com"
+}
+```
+
+Response (201 Created):
+```json
+{
+  "success": true,
+  "message": "Đăng ký thành công",
+  "customer": {
+    "id": 15,
+    "fullName": "Nguyễn Văn A",
+    "username": "nguyenvana",
+    "phone": "0987654321",
+    "email": "nguyenvana@example.com",
+    "balance": 0,
+    "totalSwaps": 0
+  }
+}
+```
+
+Controller Logic (auth.controller.js):
+```javascript
+const bcrypt = require('bcryptjs');
+const prisma = require('../config/database');
+
+exports.register = async (req, res) => {
+  try {
+    const { fullName, username, password, phone, email } = req.body;
+
+    // Kiểm tra username đã tồn tại
+    const existingUser = await prisma.customer.findUnique({
+      where: { username }
+    });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username đã được sử dụng'
+      });
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Tạo customer mới
+    const newCustomer = await prisma.customer.create({
+      data: {
+        fullName,
+        username,
+        passwordHash,
+        phone,
+        email,
+        balance: 0,
+        totalSwaps: 0
+      }
+    });
+
+    // Không trả về passwordHash
+    delete newCustomer.passwordHash;
+
+    res.status(201).json({
+      success: true,
+      message: 'Đăng ký thành công',
+      customer: newCustomer
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi đăng ký'
+    });
+  }
+};
+```
+
+=== POST /api/auth/login ===
+Đăng nhập và nhận JWT token.
+
+Request Body:
+```json
+{
+  "username": "nguyenvana",
+  "password": "password123"
+}
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "message": "Đăng nhập thành công",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "customer": {
+    "id": 15,
+    "fullName": "Nguyễn Văn A",
+    "username": "nguyenvana",
+    "balance": 50000,
+    "currentBatteryUid": "UID-045"
+  }
+}
+```
+
+Controller Logic:
+```javascript
+const jwt = require('jsonwebtoken');
+
+exports.login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Tìm customer theo username
+    const customer = await prisma.customer.findUnique({
+      where: { username },
+      include: { currentBattery: true }
+    });
+
+    if (!customer) {
+      return res.status(401).json({
+        success: false,
+        message: 'Username hoặc password không đúng'
+      });
+    }
+
+    // So sánh password
+    const isPasswordValid = await bcrypt.compare(password, customer.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Username hoặc password không đúng'
+      });
+    }
+
+    // Tạo JWT token
+    const token = jwt.sign(
+      { 
+        userId: customer.id, 
+        username: customer.username 
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    delete customer.passwordHash;
+
+    res.json({
+      success: true,
+      message: 'Đăng nhập thành công',
+      token,
+      customer
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi đăng nhập'
+    });
+  }
+};
+```
+
+JWT Token Structure:
+```
+Header:
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+
+Payload:
+{
+  "userId": 15,
+  "username": "nguyenvana",
+  "iat": 1702468800,
+  "exp": 1703073600
+}
+
+Signature:
+HMACSHA256(
+  base64UrlEncode(header) + "." + base64UrlEncode(payload),
+  JWT_SECRET
+)
+```
+
+=== POST /api/auth/reset-password ===
+Đặt lại mật khẩu qua số điện thoại.
+
+Request Body:
+```json
+{
+  "phone": "0987654321",
+  "newPassword": "newpassword123"
+}
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "message": "Đặt lại mật khẩu thành công"
+}
+```
+
+2.4.2.2. Admin Authentication & Management APIs
+
+**Lưu ý:** Hệ thống EV-Swap có 2 ứng dụng riêng biệt:
+- **Mobile App (ev-swap)**: Dành cho khách hàng, base URL: https://ev-swap-backend-2025-b268b8b1f366.herokuapp.com
+- **Admin Web (ev-swap-admin)**: Dành cho quản trị viên, chạy độc lập trên Express.js
+
+Admin Web có backend riêng (server.js) với các endpoints quản trị:
+
+=== POST /login ===
+Đăng nhập cho quản trị viên (Admin authentication).
+
+Request Body:
+```json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "full_name": "Nguyễn Văn Admin",
+  "role": "superadmin",
+  "message": "Đăng nhập thành công!"
+}
+```
+
+Controller Logic:
+```javascript
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  
+  if (!username || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'Thiếu username hoặc password!'
+    });
+  }
+
+  try {
+    // Tìm admin trong bảng admins
+    const result = await pool.query(
+      'SELECT * FROM admins WHERE username = $1',
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        code: 1,
+        message: 'Tài khoản không tồn tại!'
+      });
+    }
+
+    const user = result.rows[0];
+    
+    // Verify password với bcrypt
+    const validPassword = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
+
+    if (!validPassword) {
+      return res.status(401).json({
+        success: false,
+        code: 2,
+        message: 'Mật khẩu không đúng!'
+      });
+    }
+
+    // Đăng nhập thành công
+    res.json({
+      success: true,
+      full_name: user.full_name,
+      role: user.role,
+      message: 'Đăng nhập thành công!'
+    });
+  } catch (err) {
+    console.error('Lỗi truy vấn dữ liệu:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server!'
+    });
+  }
+});
+```
+
+**Khác biệt với Customer Login:**
+- Customer login: Bảng `customers`, trả về JWT token
+- Admin login: Bảng `admins`, không dùng JWT (session-based)
+- Admin có field `role` để phân quyền (user, superadmin)
+
+=== POST /forgot-password/check ===
+Kiểm tra tài khoản admin khi quên mật khẩu.
+
+Request Body:
+```json
+{
+  "username": "admin"
+}
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "user": {
+    "username": "admin",
+    "full_name": "Nguyễn Văn Admin",
+    "role": "superadmin"
+  }
+}
+```
+
+=== POST /forgot-password/reset ===
+Đặt lại mật khẩu cho admin.
+
+Request Body:
+```json
+{
+  "username": "admin",
+  "newPassword": "newpassword123"
+}
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "message": "Đặt lại mật khẩu thành công!"
+}
+```
+
+Controller Logic:
+```javascript
+app.post('/forgot-password/reset', async (req, res) => {
+  const { username, newPassword } = req.body;
+
+  if (!username || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      message: 'Thiếu thông tin cần thiết!'
+    });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: 'Mật khẩu phải có ít nhất 6 ký tự!'
+    });
+  }
+
+  try {
+    // Hash password mới
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update trong bảng admins
+    const result = await pool.query(
+      `UPDATE admins 
+       SET password_hash = $1, updated_at = CURRENT_TIMESTAMP 
+       WHERE username = $2 
+       RETURNING username`,
+      [hashedPassword, username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không thể cập nhật mật khẩu!'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Đặt lại mật khẩu thành công!'
+    });
+  } catch (err) {
+    console.error('Lỗi đặt lại mật khẩu:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server!'
+    });
+  }
+});
+```
+
+=== POST /Controller ===
+Lấy số liệu thống kê cho dashboard quản trị.
+
+Response (200 OK):
+```json
+{
+  "totalStations": 5,
+  "readystations": 4,
+  "goodbatteries": 24,
+  "batteriesTotal": 30,
+  "newCustomers": 8,
+  "maintenance": 1
+}
+```
+
+Controller Logic với Complex Query:
+```javascript
+app.post('/Controller', async (req, res) => {
+  try {
+    const query = `
+      SELECT
+      (SELECT COUNT(*) FROM stations) AS total_stations,
+      (SELECT COUNT(*) AS total_active_stations 
+       FROM stations 
+       WHERE status = 'active') as ready_stations,
+      (SELECT COUNT(*) 
+       FROM slots 
+       WHERE status = 'full' AND battery_uid IS NOT NULL) AS good_batteries,
+      (SELECT COUNT(*) FROM batteries) AS total_batteries,
+      (SELECT COUNT(*) 
+       FROM customers 
+       WHERE EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM CURRENT_DATE)
+         AND EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+      ) AS new_customers,
+      (SELECT COUNT(*) AS maintenance_needed
+       FROM stations
+       WHERE status = 'maintenance') AS maintenance_needed;
+    `;
+
+    const result = await pool.query(query);
+    const data = result.rows[0];
+
+    res.json({
+      totalStations: parseInt(data.total_stations),
+      readystations: parseInt(data.ready_stations),
+      goodbatteries: parseInt(data.good_batteries),
+      batteriesTotal: parseInt(data.total_batteries),
+      newCustomers: parseInt(data.new_customers),
+      maintenance: parseInt(data.maintenance_needed)
+    });
+  } catch (error) {
+    console.error('Lỗi truy vấn dữ liệu:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+```
+
+**Phân tích query:**
+- Sử dụng subqueries để tính toán từng metric
+- EXTRACT(MONTH/YEAR) để filter khách hàng mới trong tháng
+- COUNT với điều kiện để đếm pin tốt (status='full')
+- Efficient vì chỉ 1 query thay vì 6 queries riêng lẻ
+
+=== GET /Controller/battery-by-station ===
+Thống kê số pin tốt theo từng trạm.
+
+Response (200 OK):
+```json
+[
+  {
+    "station_name": "Học viện Công nghệ Bưu chính Viễn thông Hà Nội",
+    "good_battery_count": 5
+  },
+  {
+    "station_name": "Đại học Bách Khoa Hà Nội",
+    "good_battery_count": 6
+  }
+]
+```
+
+Controller Logic:
+```javascript
+app.get('/Controller/battery-by-station', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+          s.location AS station_name,
+          COUNT(CASE WHEN sl.status = 'full' 
+                AND sl.battery_uid IS NOT NULL THEN 1 END) AS good_battery_count
+      FROM stations s
+      LEFT JOIN slots sl ON s.id = sl.station_id
+      GROUP BY s.location
+      ORDER BY s.location;
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Lỗi truy vấn pin theo trạm:', error);
+    res.status(500).json({
+      error: 'Lỗi server khi lấy dữ liệu pin theo trạm'
+    });
+  }
+});
+```
+
+=== GET /Controller/battery-exchange-stats ===
+Thống kê số lần đổi pin theo trạm và tháng.
+
+Response (200 OK):
+```json
+[
+  {
+    "station_name": "Trạm PTIT",
+    "December": 15,
+    "Total": 45
+  },
+  {
+    "station_name": "Trạm Bách Khoa",
+    "December": 20,
+    "Total": 60
+  }
+]
+```
+
+Controller Logic:
+```javascript
+app.get('/Controller/battery-exchange-stats', async (req, res) => {
+  try {
+    const query = `
+      SELECT
+          s.location AS station_name,
+          CASE 
+              WHEN EXTRACT(MONTH FROM t.transaction_time) = 12 
+              THEN 'December'
+              ELSE 'Total (2025)'
+          END AS period,
+          COUNT(t.id) AS exchanged_batteries
+      FROM transaction_logs t
+      JOIN stations s ON t.station_id = s.id
+      WHERE t.status = 'completed'
+        AND EXTRACT(YEAR FROM t.transaction_time) = 2025
+      GROUP BY s.location, EXTRACT(MONTH FROM t.transaction_time)
+      ORDER BY s.location, period;
+    `;
+
+    const result = await pool.query(query);
+    
+    // Aggregate data by station
+    const stations = {};
+    result.rows.forEach((row) => {
+      const name = row.station_name;
+      if (!stations[name]) {
+        stations[name] = {
+          station_name: name,
+          December: 0,
+          Total: 0
+        };
+      }
+      
+      if (row.period === 'December') {
+        stations[name].December = parseInt(row.exchanged_batteries);
+        stations[name].Total += parseInt(row.exchanged_batteries);
+      } else {
+        stations[name].Total += parseInt(row.exchanged_batteries);
+      }
+    });
+
+    const dataArray = Object.values(stations);
+    res.json(dataArray);
+  } catch (err) {
+    console.error('Lỗi truy vấn:', err);
+    res.status(500).json({
+      error: 'Lỗi server khi lấy thống kê đổi pin'
+    });
+  }
+});
+```
+
+2.4.2.3. Station Management APIs (Admin)
+
+=== GET /Station/table ===
+Lấy danh sách trạm cho admin table view.
+
+Response (200 OK):
+```json
+[
+  {
+    "id": 1,
+    "name": "Trạm PTIT",
+    "location": "Học viện Công nghệ Bưu chính Viễn thông Hà Nội;21.0063;105.8433",
+    "status": "active"
+  }
+]
+```
+
+=== GET /Station/edit/:id ===
+Lấy chi tiết trạm để chỉnh sửa, bao gồm cả danh sách slots.
+
+Request:
+```
+GET /Station/edit/1
+```
+
+Response (200 OK):
+```json
+{
+  "id": 1,
+  "name": "Trạm PTIT",
+  "location": "Học viện Công nghệ Bưu chính Viễn thông Hà Nội;21.0063;105.8433",
+  "status": "active",
+  "total_slots": 6,
+  "available_slots": 4,
+  "last_maintenance": "2024-12-01T10:00:00Z",
+  "slots": [
+    {
+      "id": 1,
+      "slot_number": 1,
+      "status": "full",
+      "battery_uid": "BAT001"
+    },
+    {
+      "id": 2,
+      "slot_number": 2,
+      "status": "empty",
+      "battery_uid": null
+    }
+  ]
+}
+```
+
+=== PUT /Station/update/:id ===
+Cập nhật thông tin trạm.
+
+**Đặc biệt:** API này có logic kiểm tra slot trước khi cho phép giảm total_slots.
+
+Request Body:
+```json
+{
+  "name": "Trạm PTIT Updated",
+  "location": "...",
+  "status": "active",
+  "total_slots": 4,
+  "available_slots": 3,
+  "last_maintenance": "2024-12-15T10:00:00Z"
+}
+```
+
+Response nếu cần xóa slots (200 OK):
+```json
+{
+  "requireDelete": true,
+  "deleteCount": 2,
+  "emptySlots": [
+    { "id": 5, "slot_number": 5, "status": "empty" },
+    { "id": 6, "slot_number": 6, "status": "empty" }
+  ]
+}
+```
+
+Response nếu thành công (200 OK):
+```json
+{
+  "message": "Cập nhật trạm thành công",
+  "station": { /* station object */ }
+}
+```
+
+Controller Logic:
+```javascript
+app.put('/Station/update/:id', async (req, res) => {
+  try {
+    const stationId = req.params.id;
+    const {
+      name, location, status,
+      total_slots, available_slots, last_maintenance
+    } = req.body;
+
+    // Lấy số slots hiện tại
+    const slotResult = await pool.query(
+      `SELECT * FROM slots WHERE station_id = $1 ORDER BY slot_number ASC`,
+      [stationId]
+    );
+
+    const currentSlots = slotResult.rows.length;
+    const newTotal = parseInt(total_slots);
+
+    // Nếu giảm số slots, phải kiểm tra có slot trống để xóa
+    if (newTotal < currentSlots) {
+      const needDelete = currentSlots - newTotal;
+      const emptySlots = slotResult.rows.filter(s => s.status === 'empty');
+
+      if (emptySlots.length < needDelete) {
+        return res.status(400).json({
+          requireDelete: false,
+          error: `Không đủ slot trống để xoá. Cần ${needDelete}, nhưng chỉ có ${emptySlots.length} slot empty`
+        });
+      }
+
+      // Trả về danh sách slots cần xóa để admin confirm
+      return res.json({
+        requireDelete: true,
+        deleteCount: needDelete,
+        emptySlots: emptySlots
+      });
+    }
+
+    // Update station
+    const query = `
+      UPDATE stations
+      SET 
+        name = $1,
+        location = $2,
+        status = $3,
+        total_slots = $4,
+        available_slots = $5,
+        last_maintenance = $6
+      WHERE id = $7
+      RETURNING *;
+    `;
+
+    const values = [
+      name, location, status,
+      total_slots, available_slots,
+      last_maintenance || null,
+      stationId
+    ];
+
+    const result = await pool.query(query, values);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        error: 'Không tìm thấy trạm cần cập nhật'
+      });
+    }
+
+    res.json({
+      message: 'Cập nhật trạm thành công',
+      station: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Lỗi khi cập nhật trạm:', err);
+    res.status(500).json({
+      error: 'Lỗi server khi cập nhật trạm'
+    });
+  }
+});
+```
+
+=== POST /Slot/add ===
+Thêm slot mới vào trạm.
+
+Request Body:
+```json
+{
+  "station_id": 1
+}
+```
+
+Response (200 OK):
+```json
+{
+  "message": "Thêm slot thành công!",
+  "slot_number": 7
+}
+```
+
+Controller Logic:
+```javascript
+app.post('/Slot/add', async (req, res) => {
+  const { station_id } = req.body;
+
+  try {
+    // Tự động tạo slot_number tiếp theo
+    const result = await pool.query(
+      `SELECT COALESCE(MAX(slot_number), 0) + 1 AS next_number
+       FROM slots WHERE station_id = $1`,
+      [station_id]
+    );
+
+    const nextSlot = result.rows[0].next_number;
+
+    await pool.query(
+      `INSERT INTO slots (station_id, slot_number, status)
+       VALUES ($1, $2, 'empty')`,
+      [station_id, nextSlot]
+    );
+
+    res.json({
+      message: 'Thêm slot thành công!',
+      slot_number: nextSlot
+    });
+  } catch (err) {
+    console.error('Error adding slot:', err);
+    res.status(500).json({ error: 'Lỗi server khi thêm slot' });
+  }
+});
+```
+
+=== DELETE /Slot/delete/:id ===
+Xóa slot khỏi trạm.
+
+Request:
+```
+DELETE /Slot/delete/5
+```
+
+Response (200 OK):
+```json
+{
+  "message": "Xóa slot thành công!"
+}
+```
+
+=== POST /Station/add ===
+Thêm trạm mới.
+
+Request Body:
+```json
+{
+  "name": "Trạm Mỹ Đình",
+  "location": "Mỹ Đình, Hà Nội;21.0285;105.7789",
+  "status": "active",
+  "total_slots": 6,
+  "available_slots": 6,
+  "last_maintenance": null
+}
+```
+
+=== DELETE /Station/delete/:id ===
+Xóa trạm (chỉ khi tất cả slots đều trống).
+
+Controller Logic có validation:
+```javascript
+app.delete('/Station/delete/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Kiểm tra có slot đang hoạt động không
+    const check = await pool.query(
+      `SELECT COUNT(*) AS busy
+       FROM slots
+       WHERE station_id = $1 AND status != 'empty'`,
+      [id]
+    );
+
+    const busy = parseInt(check.rows[0].busy);
+
+    if (busy > 0) {
+      return res.status(400).json({
+        error: `Không thể xóa trạm vì còn ${busy} slot đang hoạt động!`
+      });
+    }
+
+    // Xóa slots trước (CASCADE)
+    await pool.query(`DELETE FROM slots WHERE station_id = $1`, [id]);
+
+    // Xóa station
+    const result = await pool.query(
+      `DELETE FROM stations WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        error: 'Không tìm thấy trạm để xóa!'
+      });
+    }
+
+    res.json({ message: 'Xóa trạm thành công!' });
+  } catch (err) {
+    console.error('Lỗi khi xóa trạm:', err);
+    res.status(500).json({ error: 'Lỗi server khi xóa trạm!' });
+  }
+});
+```
+
+2.4.2.4. Battery Management APIs (Admin)
+
+=== GET /Battery/table ===
+Lấy danh sách tất cả pin.
+
+Response (200 OK):
+```json
+[
+  {
+    "uid": "BAT001",
+    "status": "in_stock",
+    "charge_cycles": 150,
+    "last_charged": "2024-12-15T08:00:00Z",
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+=== GET /Battery/next-uid ===
+Tạo UID mới cho pin (auto-increment).
+
+Response (200 OK):
+```json
+{
+  "nextUid": "BAT031"
+}
+```
+
+Controller Logic:
+```javascript
+app.get('/Battery/next-uid', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT uid 
+      FROM batteries
+      ORDER BY CAST(SUBSTRING(uid, 4) AS INTEGER) DESC
+      LIMIT 1;
+    `);
+
+    let nextUid = 'BAT001';
+
+    if (result.rows.length > 0) {
+      const lastUid = result.rows[0].uid;  // e.g. "BAT030"
+      const number = parseInt(lastUid.slice(3));  // 30
+      nextUid = 'BAT' + String(number + 1).padStart(3, '0');  // "BAT031"
+    }
+
+    res.json({ nextUid });
+  } catch (err) {
+    console.error('Lỗi tạo UID:', err);
+    res.status(500).json({ error: 'Không thể tạo UID mới' });
+  }
+});
+```
+
+=== POST /Battery/add ===
+Thêm pin mới vào hệ thống.
+
+Request Body:
+```json
+{
+  "uid": "BAT031",
+  "status": "in_stock",
+  "charge_cycles": 0,
+  "last_charged": null
+}
+```
+
+Response (201 Created):
+```json
+{
+  "message": "Thêm pin thành công!",
+  "battery": {
+    "uid": "BAT031",
+    "status": "in_stock",
+    "charge_cycles": 0,
+    "last_charged": null,
+    "created_at": "2024-12-16T10:00:00Z"
+  }
+}
+```
+
+=== POST /Battery/import ===
+Import hàng loạt pin từ file Excel.
+
+Headers:
+```
+Content-Type: multipart/form-data
+```
+
+Request Body (form-data):
+```
+file: [Excel file với columns: uid, status, charge_cycles, last_charged]
+```
+
+Response (200 OK):
+```json
+{
+  "message": "Import thành công!",
+  "inserted": 25,
+  "skipped": 5
+}
+```
+
+Controller Logic với Multer và xlsx:
+```javascript
+const multer = require('multer');
+const XLSX = require('xlsx');
+const upload = multer({ dest: 'uploads/' });
+
+app.post('/Battery/import', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Không có file!' });
+    }
+
+    // Đọc Excel file
+    const workbook = XLSX.readFile(req.file.path);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet);
+
+    let inserted = 0;
+    let skipped = 0;
+
+    // Insert từng row
+    for (const row of rows) {
+      const { uid, status, charge_cycles, last_charged } = row;
+
+      // Kiểm tra UID đã tồn tại
+      const check = await pool.query(
+        'SELECT uid FROM batteries WHERE uid = $1',
+        [uid]
+      );
+
+      if (check.rowCount > 0) {
+        skipped++;
+        continue;
+      }
+
+      // Insert pin mới
+      await pool.query(
+        `INSERT INTO batteries(uid, status, charge_cycles, last_charged)
+         VALUES($1,$2,$3,$4)`,
+        [uid, status, charge_cycles || 0, last_charged || null]
+      );
+
+      inserted++;
+    }
+
+    res.json({
+      message: 'Import thành công!',
+      inserted,
+      skipped
+    });
+  } catch (err) {
+    console.error('Import error:', err);
+    res.status(500).json({ error: 'Lỗi server khi import file!' });
+  }
+});
+```
+
+2.4.2.5. Customer Management APIs (Admin)
+
+=== GET /CustomerManager/table ===
+Lấy danh sách khách hàng.
+
+Response (200 OK):
+```json
+[
+  {
+    "id": 15,
+    "full_name": "Nguyễn Văn A",
+    "email": "nguyenvana@example.com",
+    "phone": "0987654321",
+    "current_battery_uid": "BAT001",
+    "total_swaps": 12,
+    "created_at": "2024-11-01T00:00:00Z"
+  }
+]
+```
+
+=== GET /CustomerManager/view ===
+Xem danh sách đặt chỗ (reservations).
+
+Response (200 OK):
+```json
+[
+  {
+    "id": 1,
+    "full_name": "Nguyễn Văn A",
+    "station_name": "Trạm PTIT",
+    "battery_uid": "BAT005",
+    "status": "confirmed",
+    "reserved_time": "2024-12-16T14:00:00Z",
+    "created_at": "2024-12-16T10:00:00Z",
+    "updated_at": "2024-12-16T10:05:00Z"
+  }
+]
+```
+
+=== GET /Feedback/table ===
+Xem phản hồi từ khách hàng.
+
+Response (200 OK):
+```json
+[
+  {
+    "feedback_id": 1,
+    "full_name": "Nguyễn Văn A",
+    "content": "Dịch vụ tốt, pin đổi nhanh!",
+    "rating": 5,
+    "feedback_date": "2024-12-15T18:00:00Z"
+  }
+]
+```
+
+2.4.2.6. Station APIs (Mobile App)
+
+=== GET /api/stations ===
+Lấy danh sách tất cả trạm.
+
+Query Parameters:
+- status (optional): Filter theo trạng thái ("active", "inactive", "maintenance")
+
+Request:
+```
+GET /api/stations?status=active
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "stations": [
+    {
+      "id": 1,
+      "name": "Trạm Đại học Bách Khoa",
+      "location": "Đại học Bách Khoa Hà Nội;21.0047;105.8431",
+      "status": "active",
+      "totalSlots": 6,
+      "availableSlots": 4,
+      "lastMaintenance": "2024-12-01T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Trạm PTIT",
+      "location": "Học viện Công nghệ Bưu chính Viễn thông;21.0063;105.8433",
+      "status": "active",
+      "totalSlots": 6,
+      "availableSlots": 5
+    }
+  ]
+}
+```
+
+Controller Logic:
+```javascript
+exports.getAllStations = async (req, res) => {
+  try {
+    const { status } = req.query;
+    
+    const whereClause = status ? { status } : {};
+
+    const stations = await prisma.station.findMany({
+      where: whereClause,
+      include: {
+        slots: {
+          include: { battery: true }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    res.json({
+      success: true,
+      stations
+    });
+  } catch (error) {
+    console.error('Get stations error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy danh sách trạm'
+    });
+  }
+};
+```
+
+=== GET /api/stations/:id ===
+Lấy chi tiết một trạm và các slots.
+
+Request:
+```
+GET /api/stations/1
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "station": {
+    "id": 1,
+    "name": "Trạm Đại học Bách Khoa",
+    "location": "Đại học Bách Khoa Hà Nội;21.0047;105.8431",
+    "status": "active",
+    "totalSlots": 6,
+    "availableSlots": 4,
+    "slots": [
+      {
+        "id": 1,
+        "slotNumber": 1,
+        "status": "occupied",
+        "isBatteryPresent": true,
+        "batteryUid": "UID-001",
+        "battery": {
+          "uid": "UID-001",
+          "status": "in_stock",
+          "chargeCycles": 150
+        }
+      },
+      {
+        "id": 2,
+        "slotNumber": 2,
+        "status": "charging",
+        "isBatteryPresent": true,
+        "batteryUid": "UID-002"
+      },
+      {
+        "id": 3,
+        "slotNumber": 3,
+        "status": "empty",
+        "isBatteryPresent": false,
+        "batteryUid": null
+      }
+    ]
+  }
+}
+```
+
+2.4.2.3. Transaction APIs
+
+=== POST /api/transactions/start-swap ===
+Bắt đầu giao dịch đổi pin (yêu cầu authentication).
+
+Headers:
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+Request Body:
+```json
+{
+  "stationId": 1
+}
+```
+
+Response (201 Created):
+```json
+{
+  "success": true,
+  "message": "Giao dịch đã được tạo",
+  "transaction": {
+    "id": 45,
+    "customerId": 15,
+    "stationId": 1,
+    "requestType": "swap",
+    "oldBatteryUid": "UID-045",
+    "slotIn": 3,
+    "newBatteryUid": "UID-001",
+    "slotOut": 1,
+    "cost": 7000,
+    "status": "pending",
+    "transactionTime": "2024-12-13T08:30:00Z"
+  }
+}
+```
+
+Controller Logic (transaction.controller.js):
+```javascript
+const { verifyToken } = require('../middleware/auth.middleware');
+
+exports.startSwap = async (req, res) => {
+  try {
+    const customerId = req.user.userId; // Từ JWT token
+    const { stationId } = req.body;
+
+    // Kiểm tra customer có pin hiện tại không
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId }
+    });
+
+    if (!customer.currentBatteryUid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bạn chưa có pin để đổi'
+      });
+    }
+
+    // Tìm slot trống để trả pin cũ
+    const emptySlot = await prisma.slot.findFirst({
+      where: {
+        stationId,
+        status: 'empty',
+        isBatteryPresent: false
+      }
+    });
+
+    if (!emptySlot) {
+      return res.status(400).json({
+        success: false,
+        message: 'Trạm không còn chỗ trống để nhận pin'
+      });
+    }
+
+    // Tìm pin mới (status = in_stock)
+    const availableBattery = await prisma.battery.findFirst({
+      where: {
+        status: 'in_stock',
+        slots: {
+          some: { stationId }
+        }
+      },
+      include: {
+        slots: {
+          where: { stationId }
+        }
+      }
+    });
+
+    if (!availableBattery) {
+      return res.status(400).json({
+        success: false,
+        message: 'Trạm không còn pin khả dụng'
+      });
+    }
+
+    const newBatterySlot = availableBattery.slots[0];
+
+    // Tạo transaction
+    const transaction = await prisma.transactionLog.create({
+      data: {
+        customerId,
+        stationId,
+        requestType: 'swap',
+        oldBatteryUid: customer.currentBatteryUid,
+        slotIn: emptySlot.slotNumber,
+        newBatteryUid: availableBattery.uid,
+        slotOut: newBatterySlot.slotNumber,
+        cost: 7000,
+        status: 'pending'
+      }
+    });
+
+    // Cập nhật status pin cũ
+    await prisma.battery.update({
+      where: { uid: customer.currentBatteryUid },
+      data: { status: 'charging' }
+    });
+
+    // Cập nhật slot trả pin cũ
+    await prisma.slot.update({
+      where: { id: emptySlot.id },
+      data: {
+        status: 'charging',
+        isBatteryPresent: true,
+        batteryUid: customer.currentBatteryUid,
+        isLocked: true
+      }
+    });
+
+    // Unlock slot lấy pin mới (để hardware mở khóa)
+    await prisma.slot.update({
+      where: { id: newBatterySlot.id },
+      data: { isLocked: false }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Giao dịch đã được tạo. Vui lòng lấy pin tại slot ' + newBatterySlot.slotNumber,
+      transaction
+    });
+  } catch (error) {
+    console.error('Start swap error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi tạo giao dịch'
+    });
+  }
+};
+```
+
+=== PUT /api/transactions/:id/complete-swap ===
+Hoàn tất giao dịch sau khi customer lấy pin mới.
+
+Headers:
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+Request:
+```
+PUT /api/transactions/45/complete-swap
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "message": "Giao dịch hoàn tất",
+  "transaction": {
+    "id": 45,
+    "status": "completed",
+    "completedTime": "2024-12-13T08:35:00Z"
+  },
+  "newBalance": 43000
+}
+```
+
+Controller Logic:
+```javascript
+exports.completeSwap = async (req, res) => {
+  try {
+    const transactionId = parseInt(req.params.id);
+    const customerId = req.user.userId;
+
+    // Lấy transaction
+    const transaction = await prisma.transactionLog.findUnique({
+      where: { id: transactionId }
+    });
+
+    if (!transaction || transaction.customerId !== customerId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy giao dịch'
+      });
+    }
+
+    if (transaction.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Giao dịch không ở trạng thái pending'
+      });
+    }
+
+    // Kiểm tra số dư
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId }
+    });
+
+    if (customer.balance < transaction.cost) {
+      return res.status(400).json({
+        success: false,
+        message: 'Số dư không đủ để hoàn tất giao dịch'
+      });
+    }
+
+    // Sử dụng Prisma transaction để đảm bảo ACID
+    const result = await prisma.$transaction(async (prisma) => {
+      // Update transaction status
+      const updatedTransaction = await prisma.transactionLog.update({
+        where: { id: transactionId },
+        data: {
+          status: 'completed',
+          completedTime: new Date()
+        }
+      });
+
+      // Trừ tiền customer
+      const updatedCustomer = await prisma.customer.update({
+        where: { id: customerId },
+        data: {
+          balance: { decrement: transaction.cost },
+          totalSwaps: { increment: 1 },
+          currentBatteryUid: transaction.newBatteryUid
+        }
+      });
+
+      // Cập nhật status pin mới
+      await prisma.battery.update({
+        where: { uid: transaction.newBatteryUid },
+        data: { status: 'in_use' }
+      });
+
+      // Cập nhật slot lấy pin mới
+      const slotOut = await prisma.slot.findFirst({
+        where: {
+          stationId: transaction.stationId,
+          slotNumber: transaction.slotOut
+        }
+      });
+
+      await prisma.slot.update({
+        where: { id: slotOut.id },
+        data: {
+          status: 'empty',
+          isBatteryPresent: false,
+          batteryUid: null,
+          isLocked: true
+        }
+      });
+
+      // Giảm availableSlots của station (vì slot trả pin đang charging)
+      await prisma.station.update({
+        where: { id: transaction.stationId },
+        data: {
+          availableSlots: { decrement: 1 }
+        }
+      });
+
+      return { updatedTransaction, updatedCustomer };
+    });
+
+    res.json({
+      success: true,
+      message: 'Giao dịch hoàn tất',
+      transaction: result.updatedTransaction,
+      newBalance: result.updatedCustomer.balance
+    });
+  } catch (error) {
+    console.error('Complete swap error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi hoàn tất giao dịch'
+    });
+  }
+};
+```
+
+2.4.2.4. Profile & Wallet APIs
+
+=== GET /api/me ===
+Lấy thông tin người dùng hiện tại (yêu cầu authentication).
+
+Headers:
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "customer": {
+    "id": 15,
+    "fullName": "Nguyễn Văn A",
+    "username": "nguyenvana",
+    "phone": "0987654321",
+    "email": "nguyenvana@example.com",
+    "balance": 43000,
+    "totalSwaps": 12,
+    "currentBatteryUid": "UID-001",
+    "currentBattery": {
+      "uid": "UID-001",
+      "status": "in_use",
+      "chargeCycles": 150
+    }
+  }
+}
+```
+
+=== GET /api/me/history ===
+Lịch sử giao dịch của người dùng hiện tại.
+
+Query Parameters:
+- limit (optional): Số lượng giao dịch trả về (default: 20)
+- offset (optional): Offset cho pagination (default: 0)
+
+Request:
+```
+GET /api/me/history?limit=10&offset=0
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "transactions": [
+    {
+      "id": 45,
+      "stationId": 1,
+      "station": {
+        "name": "Trạm Đại học Bách Khoa",
+        "location": "Đại học Bách Khoa Hà Nội;21.0047;105.8431"
+      },
+      "requestType": "swap",
+      "oldBatteryUid": "UID-045",
+      "newBatteryUid": "UID-001",
+      "cost": 7000,
+      "status": "completed",
+      "transactionTime": "2024-12-13T08:30:00Z",
+      "completedTime": "2024-12-13T08:35:00Z"
+    }
+  ],
+  "total": 12
+}
+```
+
+=== PUT /api/me/update ===
+Cập nhật thông tin cá nhân.
+
+Headers:
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+Request Body:
+```json
+{
+  "fullName": "Nguyễn Văn A Updated",
+  "email": "newemail@example.com",
+  "avatarUrl": "https://example.com/avatar.jpg"
+}
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "message": "Cập nhật thông tin thành công",
+  "customer": {
+    "id": 15,
+    "fullName": "Nguyễn Văn A Updated",
+    "email": "newemail@example.com",
+    "avatarUrl": "https://example.com/avatar.jpg"
+  }
+}
+```
+
+2.4.2.5. Payment APIs
+
+=== POST /api/payment/momo/create ===
+Tạo đơn nạp tiền qua MoMo.
+
+Headers:
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+Request Body:
+```json
+{
+  "amount": 50000
+}
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "payUrl": "https://test-payment.momo.vn/v2/gateway/pay?t=...",
+  "orderId": "MOMO_1702468800_15",
+  "requestId": "REQ_1702468800_15"
+}
+```
+
+Sau khi customer thanh toán trên MoMo, MoMo sẽ callback:
+
+=== POST /api/payment/momo/callback ===
+Endpoint nhận callback từ MoMo (không yêu cầu authentication).
+
+Request Body (từ MoMo):
+```json
+{
+  "partnerCode": "MOMO",
+  "orderId": "MOMO_1702468800_15",
+  "requestId": "REQ_1702468800_15",
+  "amount": 50000,
+  "orderInfo": "Nạp tiền vào ví",
+  "transId": "2891234567",
+  "resultCode": 0,
+  "message": "Successful",
+  "payType": "qr",
+  "responseTime": 1702468900000,
+  "signature": "abc123..."
+}
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "message": "Callback processed"
+}
+```
+
+Controller Logic:
+```javascript
+const crypto = require('crypto');
+
+exports.momoCallback = async (req, res) => {
+  try {
+    const {
+      orderId,
+      requestId,
+      amount,
+      transId,
+      resultCode,
+      message,
+      signature
+    } = req.body;
+
+    // Verify signature từ MoMo
+    const rawSignature = `partnerCode=MOMO&orderId=${orderId}&requestId=${requestId}&amount=${amount}&resultCode=${resultCode}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.MOMO_SECRET_KEY)
+      .update(rawSignature)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid signature'
+      });
+    }
+
+    // Tìm payment record
+    const payment = await prisma.payment.findUnique({
+      where: { orderId }
+    });
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment not found'
+      });
+    }
+
+    if (resultCode === 0) {
+      // Thanh toán thành công
+      await prisma.$transaction(async (prisma) => {
+        // Update payment status
+        await prisma.payment.update({
+          where: { orderId },
+          data: {
+            status: 'completed',
+            transactionId: transId,
+            completedAt: new Date(),
+            momoData: req.body
+          }
+        });
+
+        // Cộng tiền vào ví customer
+        await prisma.customer.update({
+          where: { id: payment.customerId },
+          data: {
+            balance: { increment: amount }
+          }
+        });
+      });
+
+      res.json({
+        success: true,
+        message: 'Payment completed successfully'
+      });
+    } else {
+      // Thanh toán thất bại
+      await prisma.payment.update({
+        where: { orderId },
+        data: {
+          status: 'failed',
+          errorMessage: message,
+          momoData: req.body
+        }
+      });
+
+      res.json({
+        success: false,
+        message: 'Payment failed'
+      });
+    }
+  } catch (error) {
+    console.error('MoMo callback error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error processing callback'
+    });
+  }
+};
+```
+
+2.4.2.6. IoT Communication APIs
+
+=== POST /api/iot/battery/validate ===
+Xác thực pin qua RFID (từ IoT device).
+
+Headers:
+```
+X-IoT-Auth: <IOT_SECRET_KEY>
+```
+
+Request Body:
+```json
+{
+  "batteryUid": "UID-001",
+  "stationId": 1
+}
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "isValid": true,
+  "battery": {
+    "uid": "UID-001",
+    "status": "in_stock",
+    "chargeCycles": 150
+  }
+}
+```
+
+=== POST /api/iot/slot/status-update ===
+Cập nhật trạng thái slot từ sensor.
+
+Headers:
+```
+X-IoT-Auth: <IOT_SECRET_KEY>
+```
+
+Request Body:
+```json
+{
+  "stationId": 1,
+  "slotNumber": 3,
+  "isBatteryPresent": true,
+  "batteryUid": "UID-045"
+}
+```
+
+Response (200 OK):
+```json
+{
+  "success": true,
+  "message": "Slot status updated"
+}
+```
+
+2.4.3. AUTHENTICATION MIDDLEWARE (Mobile Backend)
+
+**Lưu ý:** Phần này chỉ áp dụng cho Mobile Backend. Admin Backend không dùng 
+middleware pattern, mà kiểm tra authentication trực tiếp trong mỗi route handler.
+
+File: ev-swap-backend/src/middleware/auth.middleware.js
+
+```javascript
+const jwt = require('jsonwebtoken');
+
+exports.verifyToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: 'Access token không được cung cấp'
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // { userId, username, iat, exp }
+    next();
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token đã hết hạn'
+      });
+    }
+    return res.status(403).json({
+      success: false,
+      message: 'Token không hợp lệ'
+    });
+  }
+};
+```
+
+Sử dụng trong routes:
+```javascript
+const { verifyToken } = require('../middleware/auth.middleware');
+
+router.get('/me', verifyToken, customerController.getProfile);
+router.get('/me/history', verifyToken, customerController.getHistory);
+router.post('/transactions/start-swap', verifyToken, transactionController.startSwap);
+```
+
+2.4.4. ERROR HANDLING (Mobile Backend)
+
+**Lưu ý:** Centralized error handling này cho Mobile Backend. Admin Backend 
+xử lý errors trực tiếp trong mỗi try-catch block của route handler.
+
+Centralized error handling cho Mobile Backend:
+```javascript
+// Custom error class
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.isOperational = true;
+  }
+}
+
+// Global error handler middleware
+app.use((err, req, res, next) => {
+  err.statusCode = err.statusCode || 500;
+  err.message = err.message || 'Internal Server Error';
+
+  if (process.env.NODE_ENV === 'development') {
+    res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      stack: err.stack
+    });
+  } else {
+    res.status(err.statusCode).json({
+      success: false,
+      message: err.message
+    });
+  }
+});
+```
+
+2.4.5. SEQUENCE DIAGRAM - QUY TRÌNH ĐỔI PIN (Mobile Backend)
+
+Sequence diagram mô tả luồng đổi pin từ Mobile App qua Mobile Backend:
+
+PlantUML sequence diagram:
+
+```plantuml
+@startuml Swap Battery Process
+
+actor Customer
+participant "Mobile App" as App
+participant "Backend API" as API
+participant "PostgreSQL" as DB
+participant "IoT Device" as IoT
+
+Customer -> App: Scan QR at station
+App -> API: POST /api/transactions/start-swap\n{stationId: 1}
+API -> DB: Check customer balance
+API -> DB: Find empty slot for old battery
+API -> DB: Find available battery (status=in_stock)
+API -> DB: Create TransactionLog\n(status=pending)
+API -> DB: Update old battery status=charging
+API -> DB: Update slot (unlock new battery)
+API --> App: Transaction created\n{slotOut: 1, newBatteryUid: "UID-001"}
+App --> Customer: "Vui lòng lấy pin tại slot 1"
+
+Customer -> IoT: Take new battery from slot 1
+IoT -> API: POST /api/iot/slot/status-update\n{slotNumber: 1, isBatteryPresent: false}
+API -> DB: Update slot status=empty
+
+Customer -> App: Confirm battery taken
+App -> API: PUT /api/transactions/:id/complete-swap
+API -> DB: BEGIN TRANSACTION
+API -> DB: Update TransactionLog\n(status=completed)
+API -> DB: Deduct customer balance
+API -> DB: Update customer.currentBatteryUid
+API -> DB: Update new battery status=in_use
+API -> DB: Decrement station.availableSlots
+API -> DB: COMMIT TRANSACTION
+API --> App: Transaction completed\n{newBalance: 43000}
+App --> Customer: "Đổi pin thành công!"
+
+@enduml
+```
+
+2.4.6. KIẾN TRÚC ADMIN WEB APPLICATION
+
+2.4.6.1. Tổng quan Admin System
+
+Hệ thống EV-Swap có 2 ứng dụng backend riêng biệt:
+
+**1. Mobile Backend (ev-swap-backend):**
+- Framework: Express.js + Prisma ORM
+- Database: PostgreSQL trên Heroku
+- Authentication: JWT tokens
+- Base URL: https://ev-swap-backend-2025-b268b8b1f366.herokuapp.com
+- Users: Khách hàng (customers)
+- Chức năng: Đăng ký, đăng nhập, đổi pin, nạp tiền, xem lịch sử
+
+**2. Admin Backend (ev-swap-admin):**
+- Framework: Express.js + pg driver
+- Database: PostgreSQL (same database, khác connection)
+- Authentication: Session-based (không dùng JWT)
+- Deployment: Heroku riêng biệt
+- Users: Quản trị viên (admins)
+- Chức năng: Dashboard, quản lý trạm/pin/khách hàng, xem feedback
+
+2.4.6.2. Cấu trúc Admin Web
+
+```
+ev-swap-admin/
+├── server.js                   # Main Express app
+├── package.json                # Dependencies
+├── Procfile                    # Heroku deployment config
+├── Database.sql                # SQL schema
+├── SignIn.html                 # Admin login page
+├── Controller.html             # Dashboard với charts
+├── Station.html                # Quản lý trạm
+├── Battery.html                # Quản lý pin
+├── CustomerManager.html        # Quản lý khách hàng
+├── Feedback.html               # Xem phản hồi
+└── ForgetPassword.html         # Reset password
+```
+
+2.4.6.3. Database Connection
+
+```javascript
+import pkg from 'pg';
+const { Pool } = pkg;
+
+// Connection với Heroku PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL ||
+    'postgres://postgres:123@localhost:5432/doan_db',
+  ssl: process.env.DATABASE_URL ? {
+    rejectUnauthorized: false  // Required for Heroku Postgres
+  } : false
+});
+
+pool.connect()
+  .then((client) => {
+    console.log('Kết nối PostgreSQL thành công!');
+    client.release();
+  })
+  .catch((err) => {
+    console.error('Lỗi kết nối PostgreSQL:', err.message);
+  });
+```
+
+**Lý do dùng pg thay vì Prisma:**
+- Admin web cần queries phức tạp với subqueries, aggregations
+- Raw SQL linh hoạt hơn cho các thống kê dashboard
+- Prisma thích hợp cho CRUD đơn giản (Mobile Backend)
+- pg driver nhẹ hơn, phù hợp cho admin tool
+
+2.4.6.4. Routing Structure
+
+```javascript
+import express from 'express';
+import path from 'path';
+
+const app = express();
+
+// Serve HTML pages
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'SignIn.html'));
+});
+
+app.get('/Controller', (req, res) => {
+  res.sendFile(path.join(__dirname, 'Controller.html'));
+});
+
+app.get('/Station', (req, res) => {
+  res.sendFile(path.join(__dirname, 'Station.html'));
+});
+
+app.get('/Battery', (req, res) => {
+  res.sendFile(path.join(__dirname, 'Battery.html'));
+});
+
+// API endpoints
+app.post('/login', adminController.login);
+app.post('/Controller', adminController.getDashboardStats);
+app.get('/Station/table', stationController.getAll);
+app.put('/Station/update/:id', stationController.update);
+app.post('/Battery/import', upload.single('file'), batteryController.importExcel);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+2.4.6.5. File Upload với Multer
+
+Admin web hỗ trợ import hàng loạt pin từ Excel:
+
+```javascript
+import multer from 'multer';
+import XLSX from 'xlsx';
+
+// Configure multer storage
+const upload = multer({ dest: 'uploads/' });
+
+app.post('/Battery/import', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Không có file!' });
+    }
+
+    // Read Excel file
+    const workbook = XLSX.readFile(req.file.path);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet);
+
+    let inserted = 0;
+    let skipped = 0;
+
+    for (const row of rows) {
+      const { uid, status, charge_cycles, last_charged } = row;
+
+      // Check if UID exists
+      const check = await pool.query(
+        'SELECT uid FROM batteries WHERE uid = $1',
+        [uid]
+      );
+
+      if (check.rowCount > 0) {
+        skipped++;
+        continue;
+      }
+
+      // Insert new battery
+      await pool.query(
+        `INSERT INTO batteries(uid, status, charge_cycles, last_charged)
+         VALUES($1, $2, $3, $4)`,
+        [uid, status, charge_cycles || 0, last_charged || null]
+      );
+
+      inserted++;
+    }
+
+    res.json({
+      message: 'Import thành công!',
+      inserted,
+      skipped
+    });
+  } catch (err) {
+    console.error('Import error:', err);
+    res.status(500).json({ error: 'Lỗi server khi import file!' });
+  }
+});
+```
+
+Format Excel file:
+```
+| uid    | status    | charge_cycles | last_charged        |
+|--------|-----------|---------------|---------------------|
+| BAT001 | in_stock  | 0             | 2024-12-16 08:00:00 |
+| BAT002 | in_stock  | 0             |                     |
+| BAT003 | charging  | 50            | 2024-12-16 09:30:00 |
+```
+
+2.4.6.6. Complex Queries cho Dashboard
+
+Dashboard hiển thị nhiều metrics cùng lúc với một query:
+
+```javascript
+app.post('/Controller', async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        (SELECT COUNT(*) FROM stations) AS total_stations,
+        
+        (SELECT COUNT(*) 
+         FROM stations 
+         WHERE status = 'active') AS ready_stations,
+        
+        (SELECT COUNT(*) 
+         FROM slots 
+         WHERE status = 'full' AND battery_uid IS NOT NULL) AS good_batteries,
+        
+        (SELECT COUNT(*) FROM batteries) AS total_batteries,
+        
+        (SELECT COUNT(*) 
+         FROM customers 
+         WHERE EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM CURRENT_DATE)
+           AND EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+        ) AS new_customers,
+        
+        (SELECT COUNT(*) 
+         FROM stations
+         WHERE status = 'maintenance') AS maintenance_needed;
+    `;
+
+    const result = await pool.query(query);
+    const data = result.rows[0];
+
+    res.json({
+      totalStations: parseInt(data.total_stations),
+      readystations: parseInt(data.ready_stations),
+      goodbatteries: parseInt(data.good_batteries),
+      batteriesTotal: parseInt(data.total_batteries),
+      newCustomers: parseInt(data.new_customers),
+      maintenance: parseInt(data.maintenance_needed)
+    });
+  } catch (error) {
+    console.error('Lỗi truy vấn dữ liệu:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+```
+
+**Ưu điểm của approach này:**
+- Chỉ 1 round-trip đến database
+- Subqueries độc lập, dễ maintain
+- Performance tốt với PostgreSQL query planner
+
+2.4.6.7. Validation Logic
+
+Admin API có nhiều business logic validation:
+
+**Example 1: Không cho xóa trạm nếu còn slot hoạt động**
+```javascript
+app.delete('/Station/delete/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Check có slot đang hoạt động
+    const check = await pool.query(
+      `SELECT COUNT(*) AS busy
+       FROM slots
+       WHERE station_id = $1 AND status != 'empty'`,
+      [id]
+    );
+
+    const busy = parseInt(check.rows[0].busy);
+
+    if (busy > 0) {
+      return res.status(400).json({
+        error: `Không thể xóa trạm vì còn ${busy} slot đang hoạt động!`
+      });
+    }
+
+    // Xóa cascade: slots → station
+    await pool.query(`DELETE FROM slots WHERE station_id = $1`, [id]);
+    await pool.query(`DELETE FROM stations WHERE id = $1`, [id]);
+
+    res.json({ message: 'Xóa trạm thành công!' });
+  } catch (err) {
+    console.error('Lỗi khi xóa trạm:', err);
+    res.status(500).json({ error: 'Lỗi server!' });
+  }
+});
+```
+
+**Example 2: Không cho giảm total_slots nếu không đủ slot trống**
+```javascript
+app.put('/Station/update/:id', async (req, res) => {
+  const { total_slots } = req.body;
+  
+  // Get current slots
+  const slotResult = await pool.query(
+    `SELECT * FROM slots WHERE station_id = $1`,
+    [stationId]
+  );
+
+  const currentSlots = slotResult.rows.length;
+  const newTotal = parseInt(total_slots);
+
+  if (newTotal < currentSlots) {
+    const needDelete = currentSlots - newTotal;
+    const emptySlots = slotResult.rows.filter(s => s.status === 'empty');
+
+    if (emptySlots.length < needDelete) {
+      return res.status(400).json({
+        error: `Không đủ slot trống để xoá. Cần ${needDelete}, có ${emptySlots.length}`
+      });
+    }
+
+    // Return list để admin confirm
+    return res.json({
+      requireDelete: true,
+      deleteCount: needDelete,
+      emptySlots: emptySlots
+    });
+  }
+
+  // Proceed with update...
+});
+```
+
+2.4.6.8. Deployment trên Heroku
+
+**Procfile:**
+```
+web: node server.js
+```
+
+**Environment Variables:**
+```bash
+DATABASE_URL=postgres://username:password@host:5432/dbname
+NODE_ENV=production
+PORT=3000
+```
+
+**Build process:**
+```bash
+# Local test
+npm install
+npm start
+
+# Deploy to Heroku
+heroku login
+heroku create ev-swap-admin-2025
+heroku addons:create heroku-postgresql:essential-0
+git push heroku main
+heroku open
+```
+
+**Logs monitoring:**
+```bash
+heroku logs --tail --app ev-swap-admin-2025
+```
+
+================================================================================
+KẾT LUẬN PHẦN 2.4
+
+Thiết kế Backend API của hệ thống EV-Swap đảm bảo:
+
+**Mobile Backend (ev-swap-backend):**
+1. RESTful architecture chuẩn với HTTP methods rõ ràng
+2. Stateless authentication qua JWT tokens
+3. Phân lớp rõ ràng (Routes → Middleware → Controllers → Database)
+4. Transaction safety với Prisma transactions (ACID)
+5. Error handling tập trung
+6. IoT integration cho hardware communication
+7. MoMo payment gateway integration với signature verification
+8. API documentation đầy đủ với request/response examples
+
+**Admin Backend (ev-swap-admin):**
+1. Express.js với pg driver cho queries phức tạp
+2. Session-based authentication cho admin
+3. Dashboard với real-time statistics và charts
+4. CRUD operations cho Station, Battery, Customer management
+5. Excel import/export cho bulk operations
+6. Complex SQL queries với subqueries và aggregations
+7. Business logic validation (xóa trạm, update slots)
+8. Heroku deployment với PostgreSQL integration
+
+**Tách biệt rõ ràng:**
+- Mobile Backend phục vụ end-users (customers) qua mobile app
+- Admin Backend phục vụ quản trị viên qua web interface
+- Cùng database nhưng khác connection và authentication
+- Mobile dùng JWT (stateless), Admin dùng session (stateful)
+
+Backend APIs là cầu nối giữa ứng dụng mobile, admin web, IoT devices và database, 
+đảm bảo tính toàn vẹn dữ liệu và trải nghiệm người dùng/admin mượt mà.
+================================================================================

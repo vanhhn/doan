@@ -92,11 +92,6 @@ const ReservationScreen: React.FC = () => {
           <Text style={[styles.stationName, { color: colors.text }]}>
             {item.name}
           </Text>
-          <Text
-            style={[styles.stationLocation, { color: colors.textSecondary }]}
-          >
-            📍 {item.location}
-          </Text>
           <View style={styles.slotInfo}>
             <Text
               style={[
@@ -105,8 +100,8 @@ const ReservationScreen: React.FC = () => {
               ]}
             >
               {hasSlots
-                ? `${item.availableSlots}/${item.totalSlots} slot trống`
-                : "Hết slot"}
+                ? `🔋 ${item.availableSlots}/${item.totalSlots} pin có sẵn`
+                : "❌ Hết pin"}
             </Text>
           </View>
         </View>

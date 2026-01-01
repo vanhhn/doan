@@ -52,7 +52,35 @@
     "nearbyStations": "Nearby Stations"
   },
   "history": {
+    "title": "Transaction History",
     "noHistory": "No transaction history yet."
+  },
+  "reservation": {
+    "title": "Reserve Battery",
+    "subtitle": "Select a station to reserve 30 minutes ahead",
+    "reserve": "Reserve",
+    "reserved": "Full",
+    "availableBatteries": "batteries available",
+    "noBatteries": "No batteries",
+    "noStations": "No stations available",
+    "loading": "Loading station list...",
+    "confirmTitle": "Confirm Reservation",
+    "confirmMessage": "Would you like to reserve a spot at {stationName}?\n\nHold time: 30 minutes",
+    "successMessage": "Please arrive at the station within 30 minutes to scan QR."
+  },
+  "momoPayment": {
+    "title": "MoMo Payment",
+    "loading": "Loading...",
+    "error": "Cannot load payment",
+    "cancelTitle": "Cancel payment?",
+    "cancelMessage": "Are you sure you want to cancel this transaction?",
+    "no": "No",
+    "cancel": "Cancel",
+    "success": "Success",
+    "successMessage": "Top-up successful!",
+    "failed": "Failed",
+    "failedMessage": "Payment unsuccessful. Please try again.",
+    "ok": "OK"
   },
   "wallet": {
     "currentBalance": "Current Balance",

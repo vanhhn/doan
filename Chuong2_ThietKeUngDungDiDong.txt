@@ -1,0 +1,1238 @@
+================================================================================
+CHƯƠNG 2: PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG
+Phần 2.5: THIẾT KẾ ỨNG DỤNG DI ĐỘNG
+Phần thực hiện: Ngô Việt Anh
+================================================================================
+
+2.5.1. YÊU CẦU CHỨC NĂNG ỨNG DỤNG MOBILE
+
+Ứng dụng di động là giao diện chính để người dùng tương tác với hệ thống đổi 
+pin. Các yêu cầu chức năng bao gồm:
+
+1. Authentication:
+   - Đăng ký tài khoản mới
+   - Đăng nhập bằng username/password
+   - Đặt lại mật khẩu qua số điện thoại
+   - Lưu phiên đăng nhập (persistent session)
+
+2. Map & Location:
+   - Hiển thị bản đồ với các trạm đổi pin
+   - Định vị vị trí hiện tại của người dùng
+   - Tính khoảng cách từ vị trí hiện tại đến các trạm
+   - Filter trạm theo trạng thái (active, có pin khả dụng)
+
+3. QR Scanner:
+   - Quét mã QR tại trạm để bắt đầu đổi pin
+   - Xác thực mã QR với backend
+   - Hiển thị thông tin giao dịch
+
+4. Wallet & Payment:
+   - Hiển thị số dư ví
+   - Nạp tiền qua MoMo
+   - Xem lịch sử giao dịch
+   - Xem chi tiết từng giao dịch
+
+5. Profile Management:
+   - Xem thông tin cá nhân
+   - Chỉnh sửa thông tin (tên, email, avatar)
+   - Xem pin đang sử dụng
+   - Đổi mật khẩu
+   - Đăng xuất
+
+6. Multi-language:
+   - Tiếng Việt
+   - Tiếng Anh
+
+7. Theme:
+   - Light mode
+   - Dark mode
+
+
+2.5.2. KIẾN TRÚC ỨNG DỤNG
+
+2.5.2.1. Component-based Architecture
+
+Ứng dụng được tổ chức theo kiến trúc component-based của React Native:
+
+```
+ev-swap/
+├── App.tsx                      # Root component, navigation setup
+├── screens/                     # Các màn hình chính
+│   ├── LoginScreen.tsx          # Đăng nhập
+│   ├── SignUpScreen.tsx         # Đăng ký
+│   ├── HomeScreen.tsx           # Màn hình chính
+│   ├── MapScreen.tsx            # Bản đồ trạm
+│   ├── QRScannerScreen.tsx      # Quét QR
+│   ├── StationDetailsScreen.tsx # Chi tiết trạm
+│   ├── WalletScreen.tsx         # Ví tiền
+│   ├── HistoryScreen.tsx        # Lịch sử giao dịch
+│   ├── AccountScreen.tsx        # Tài khoản
+│   ├── PersonalInfoScreen.tsx   # Thông tin cá nhân
+│   ├── SettingsScreen.tsx       # Cài đặt
+│   └── HelpScreen.tsx           # Hỗ trợ
+├── components/                  # Reusable components
+│   ├── MainLayout.tsx           # Layout chung
+│   ├── Header.tsx               # Header component
+│   ├── Modal.tsx                # Modal component
+│   ├── Accordion.tsx            # Accordion component
+│   ├── ToggleSwitch.tsx         # Toggle switch
+│   └── icons.tsx                # Icon components
+├── contexts.tsx                 # Context API (Auth, Theme, I18n)
+├── services/                    # API services (nếu tách riêng)
+│   └── api.ts                   # Axios instance, API calls
+├── hooks/                       # Custom hooks
+│   ├── useAuth.ts
+│   ├── useTheme.ts
+│   └── useI18n.ts
+├── types.ts                     # TypeScript types
+├── constants.ts                 # App constants
+├── theme.ts                     # Theme configuration
+├── locales/                     # Translation files
+│   ├── en.json                  # Tiếng Anh
+│   └── vi.json                  # Tiếng Việt
+└── assets/                      # Images, fonts
+```
+
+2.5.2.2. Navigation Structure
+
+Sử dụng React Navigation với Stack Navigator và Bottom Tab Navigator:
+
+```
+┌─────────────────────────────────────────────────────┐
+│              Stack Navigator (Root)                 │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │   Auth Stack (Not logged in)                │   │
+│  │   - LoginScreen                             │   │
+│  │   - SignUpScreen                            │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │   Main Stack (Logged in)                    │   │
+│  │                                             │   │
+│  │   ┌───────────────────────────────────┐     │   │
+│  │   │  Bottom Tab Navigator             │     │   │
+│  │   │  ┌─────┬─────┬─────┬─────┐        │     │   │
+│  │   │  │Home │ Map │Wallet│Acct │        │     │   │
+│  │   │  └─────┴─────┴─────┴─────┘        │     │   │
+│  │   └───────────────────────────────────┘     │   │
+│  │                                             │   │
+│  │   Modal/Overlay screens:                    │   │
+│  │   - QRScannerScreen                         │   │
+│  │   - StationDetailsScreen                    │   │
+│  │   - PersonalInfoScreen                      │   │
+│  │   - SettingsScreen                          │   │
+│  │   - HelpScreen                              │   │
+│  │   - HistoryScreen                           │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+App.tsx implementation:
+```typescript
+import React, { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Contexts
+import { AuthProvider, useAuth } from './contexts';
+
+// Screens
+import LoginScreen from './screens/LoginScreen';
+import SignUpScreen from './screens/SignUpScreen';
+import HomeScreen from './screens/HomeScreen';
+import MapScreen from './screens/MapScreen';
+import WalletScreen from './screens/WalletScreen';
+import AccountScreen from './screens/AccountScreen';
+import QRScannerScreen from './screens/QRScannerScreen';
+import StationDetailsScreen from './screens/StationDetailsScreen';
+import HistoryScreen from './screens/HistoryScreen';
+import PersonalInfoScreen from './screens/PersonalInfoScreen';
+import SettingsScreen from './screens/SettingsScreen';
+
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+// Bottom Tab Navigator
+function MainTabs() {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen}
+        options={{ title: 'Trang chủ' }}
+      />
+      <Tab.Screen 
+        name="Map" 
+        component={MapScreen}
+        options={{ title: 'Bản đồ' }}
+      />
+      <Tab.Screen 
+        name="Wallet" 
+        component={WalletScreen}
+        options={{ title: 'Ví tiền' }}
+      />
+      <Tab.Screen 
+        name="Account" 
+        component={AccountScreen}
+        options={{ title: 'Tài khoản' }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+// Auth Stack
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="SignUp" component={SignUpScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// Main Stack (after login)
+function MainStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen 
+        name="MainTabs" 
+        component={MainTabs}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="QRScanner" 
+        component={QRScannerScreen}
+        options={{ presentation: 'modal', title: 'Quét QR' }}
+      />
+      <Stack.Screen 
+        name="StationDetails" 
+        component={StationDetailsScreen}
+        options={{ title: 'Chi tiết trạm' }}
+      />
+      <Stack.Screen 
+        name="History" 
+        component={HistoryScreen}
+        options={{ title: 'Lịch sử' }}
+      />
+      <Stack.Screen 
+        name="PersonalInfo" 
+        component={PersonalInfoScreen}
+        options={{ title: 'Thông tin cá nhân' }}
+      />
+      <Stack.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{ title: 'Cài đặt' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// Root Navigator
+function RootNavigator() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  return user ? <MainStack /> : <AuthStack />;
+}
+
+// App Component
+export default function App() {
+  return (
+    <AuthProvider>
+      <NavigationContainer>
+        <RootNavigator />
+      </NavigationContainer>
+    </AuthProvider>
+  );
+}
+```
+
+2.5.2.3. State Management với Context API
+
+File: contexts.tsx
+
+```typescript
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Auth Context
+interface User {
+  id: number;
+  username: string;
+  fullName: string;
+  balance: number;
+  currentBatteryUid?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  updateUser: (user: User) => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Load saved auth data on app start
+    loadAuthData();
+  }, []);
+
+  const loadAuthData = async () => {
+    try {
+      const savedToken = await AsyncStorage.getItem('token');
+      const savedUser = await AsyncStorage.getItem('user');
+      
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      }
+    } catch (error) {
+      console.error('Load auth data error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (username: string, password: string) => {
+    try {
+      const response = await fetch('https://your-backend.herokuapp.com/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setToken(data.token);
+        setUser(data.customer);
+        
+        // Save to AsyncStorage
+        await AsyncStorage.setItem('token', data.token);
+        await AsyncStorage.setItem('user', JSON.stringify(data.customer));
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    setUser(null);
+    setToken(null);
+    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('user');
+  };
+
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+    AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+}
+
+// Theme Context
+interface ThemeContextType {
+  isDarkMode: boolean;
+  toggleTheme: () => void;
+  colors: {
+    primary: string;
+    background: string;
+    text: string;
+    card: string;
+  };
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const colors = isDarkMode
+    ? {
+        primary: '#4CAF50',
+        background: '#121212',
+        text: '#FFFFFF',
+        card: '#1E1E1E'
+      }
+    : {
+        primary: '#4CAF50',
+        background: '#F5F5F5',
+        text: '#000000',
+        card: '#FFFFFF'
+      };
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+  return (
+    <ThemeContext.Provider value={{ isDarkMode, toggleTheme, colors }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export function useTheme() {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within ThemeProvider');
+  }
+  return context;
+}
+
+// I18n Context
+interface I18nContextType {
+  language: 'vi' | 'en';
+  setLanguage: (lang: 'vi' | 'en') => void;
+  t: (key: string) => string;
+}
+
+const I18nContext = createContext<I18nContextType | undefined>(undefined);
+
+export function I18nProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguage] = useState<'vi' | 'en'>('vi');
+
+  const translations = {
+    vi: require('./locales/vi.json'),
+    en: require('./locales/en.json')
+  };
+
+  const t = (key: string): string => {
+    return translations[language][key] || key;
+  };
+
+  return (
+    <I18nContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </I18nContext.Provider>
+  );
+}
+
+export function useI18n() {
+  const context = useContext(I18nContext);
+  if (!context) {
+    throw new Error('useI18n must be used within I18nProvider');
+  }
+  return context;
+}
+```
+
+2.5.3. USER FLOW VÀ WIREFRAMES
+
+2.5.3.1. Login Flow
+
+```
+┌─────────────────┐
+│  Login Screen   │
+│                 │
+│  ┌───────────┐  │
+│  │ Username  │  │
+│  └───────────┘  │
+│  ┌───────────┐  │
+│  │ Password  │  │
+│  └───────────┘  │
+│                 │
+│  [ Đăng nhập ]  │
+│                 │
+│  Chưa có TK?    │
+│  Đăng ký ngay   │
+│                 │
+│  Quên mật khẩu? │
+└─────────────────┘
+        │
+        ▼
+  POST /api/auth/login
+        │
+        ▼
+   Save token to
+   AsyncStorage
+        │
+        ▼
+┌─────────────────┐
+│  Home Screen    │
+│  (Main Tabs)    │
+└─────────────────┘
+```
+
+2.5.3.2. Swap Battery Flow
+
+```
+┌─────────────────┐
+│  Home Screen    │
+│                 │
+│  [Đổi pin ngay] │ ────┐
+└─────────────────┘     │
+                        ▼
+                 ┌─────────────────┐
+                 │  Map Screen     │
+                 │  Select Station │
+                 │                 │
+                 │  [ Xem chi tiết]│
+                 └─────────────────┘
+                        │
+                        ▼
+                 ┌─────────────────┐
+                 │ Station Details │
+                 │                 │
+                 │ Available: 4/6  │
+                 │                 │
+                 │  [Quét QR code] │
+                 └─────────────────┘
+                        │
+                        ▼
+                 ┌─────────────────┐
+                 │  QR Scanner     │
+                 │  ┌───────────┐  │
+                 │  │ [Camera]  │  │
+                 │  └───────────┘  │
+                 └─────────────────┘
+                        │
+                        ▼
+               POST /api/transactions/start-swap
+                        │
+                        ▼
+                 ┌─────────────────┐
+                 │  Confirmation   │
+                 │                 │
+                 │ Lấy pin tại     │
+                 │ Slot 1          │
+                 │                 │
+                 │ [Xác nhận]      │
+                 └─────────────────┘
+                        │
+                        ▼
+               PUT /api/transactions/:id/complete
+                        │
+                        ▼
+                 ┌─────────────────┐
+                 │  Success        │
+                 │                 │
+                 │ Đổi pin         │
+                 │ thành công!     │
+                 │                 │
+                 │ Số dư: 43,000đ  │
+                 └─────────────────┘
+```
+
+2.5.4. CHI TIẾT CÁC SCREENS
+
+2.5.4.1. HomeScreen - Màn hình chính
+
+Wireframe:
+```
+┌──────────────────────────────────────┐
+│ ☰  EV-Swap            🔔  👤         │
+├──────────────────────────────────────┤
+│                                      │
+│  ┌────────────────────────────────┐  │
+│  │   Pin hiện tại: UID-001        │  │
+│  │                                │  │
+│  │   ┌──────────────────────┐     │  │
+│  │   │   🔋                 │     │  │
+│  │   │   ████████░░         │     │  │
+│  │   │   80%                │     │  │
+│  │   └──────────────────────┘     │  │
+│  │                                │  │
+│  │   Chu kỳ sạc: 150 lần          │  │
+│  └────────────────────────────────┘  │
+│                                      │
+│  ┌────────────────────────────────┐  │
+│  │       [Đổi pin ngay]           │  │
+│  └────────────────────────────────┘  │
+│                                      │
+│  ┌────────────────────────────────┐  │
+│  │   Số dư ví: 43,000đ            │  │
+│  │                                │  │
+│  │   [Nạp tiền]                   │  │
+│  └────────────────────────────────┘  │
+│                                      │
+│  Lịch sử giao dịch gần đây:         │
+│  ┌────────────────────────────────┐  │
+│  │ 13/12/2024 08:35               │  │
+│  │ Trạm Bách Khoa                 │  │
+│  │ -7,000đ                        │  │
+│  └────────────────────────────────┘  │
+│  ┌────────────────────────────────┐  │
+│  │ 12/12/2024 14:20               │  │
+│  │ Trạm PTIT                      │  │
+│  │ -7,000đ                        │  │
+│  └────────────────────────────────┘  │
+│                                      │
+│  [Xem tất cả]                        │
+│                                      │
+└──────────────────────────────────────┘
+│  🏠    🗺️    💰    👤              │
+└──────────────────────────────────────┘
+```
+
+Implementation snippet (HomeScreen.tsx):
+```typescript
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { useAuth } from '../contexts';
+
+interface Transaction {
+  id: number;
+  stationName: string;
+  cost: number;
+  transactionTime: string;
+}
+
+export default function HomeScreen({ navigation }: any) {
+  const { user, token } = useAuth();
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [batteryLevel, setBatteryLevel] = useState(80); // Mock data
+
+  useEffect(() => {
+    fetchRecentTransactions();
+  }, []);
+
+  const fetchRecentTransactions = async () => {
+    try {
+      const response = await fetch('https://your-backend.herokuapp.com/api/me/history?limit=5', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setRecentTransactions(data.transactions);
+      }
+    } catch (error) {
+      console.error('Fetch transactions error:', error);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Battery Indicator */}
+      <View style={styles.batteryCard}>
+        <Text style={styles.batteryTitle}>Pin hiện tại: {user?.currentBatteryUid}</Text>
+        <BatteryIndicator level={batteryLevel} />
+        <Text style={styles.batteryInfo}>Chu kỳ sạc: 150 lần</Text>
+      </View>
+
+      {/* Swap Button */}
+      <TouchableOpacity 
+        style={styles.swapButton}
+        onPress={() => navigation.navigate('Map')}
+      >
+        <Text style={styles.swapButtonText}>Đổi pin ngay</Text>
+      </TouchableOpacity>
+
+      {/* Wallet Card */}
+      <View style={styles.walletCard}>
+        <Text style={styles.walletBalance}>Số dư ví: {user?.balance.toLocaleString()}đ</Text>
+        <TouchableOpacity 
+          style={styles.rechargeButton}
+          onPress={() => navigation.navigate('Wallet')}
+        >
+          <Text style={styles.rechargeButtonText}>Nạp tiền</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Recent Transactions */}
+      <Text style={styles.sectionTitle}>Lịch sử giao dịch gần đây:</Text>
+      <FlatList
+        data={recentTransactions}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.transactionItem}>
+            <Text style={styles.transactionDate}>
+              {new Date(item.transactionTime).toLocaleDateString('vi-VN')}
+            </Text>
+            <Text style={styles.transactionStation}>{item.stationName}</Text>
+            <Text style={styles.transactionCost}>-{item.cost.toLocaleString()}đ</Text>
+          </View>
+        )}
+      />
+
+      <TouchableOpacity onPress={() => navigation.navigate('History')}>
+        <Text style={styles.viewAllText}>Xem tất cả</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function BatteryIndicator({ level }: { level: number }) {
+  return (
+    <View style={styles.batteryIndicator}>
+      <View style={[styles.batteryFill, { width: `${level}%` }]} />
+      <Text style={styles.batteryPercentage}>{level}%</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#F5F5F5'
+  },
+  batteryCard: {
+    backgroundColor: '#FFF',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16
+  },
+  batteryIndicator: {
+    height: 60,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 8,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 12
+  },
+  batteryFill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    height: '100%',
+    backgroundColor: '#4CAF50'
+  },
+  swapButton: {
+    backgroundColor: '#4CAF50',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 16
+  },
+  swapButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold'
+  }
+  // ... more styles
+});
+```
+
+2.5.4.2. MapScreen - Bản đồ trạm
+
+Wireframe:
+```
+┌──────────────────────────────────────┐
+│ ←  Bản đồ trạm              🔍       │
+├──────────────────────────────────────┤
+│                                      │
+│  ┌────────────────────────────────┐  │
+│  │                                │  │
+│  │         📍                     │  │
+│  │       📍   📍                  │  │
+│  │            🔵 (You are here)   │  │
+│  │    📍                          │  │
+│  │                                │  │
+│  │  Google Maps with markers      │  │
+│  │                                │  │
+│  └────────────────────────────────┘  │
+│                                      │
+│  ┌────────────────────────────────┐  │
+│  │ Trạm Bách Khoa          1.2km │  │
+│  │ Available: 4/6                 │  │
+│  │                  [Chi tiết]    │  │
+│  └────────────────────────────────┘  │
+│                                      │
+│  ┌────────────────────────────────┐  │
+│  │ Trạm PTIT               2.5km │  │
+│  │ Available: 5/6                 │  │
+│  │                  [Chi tiết]    │  │
+│  └────────────────────────────────┘  │
+│                                      │
+└──────────────────────────────────────┘
+```
+
+Implementation (MapScreen.tsx):
+```typescript
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity, Text } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { useAuth } from '../contexts';
+
+interface Station {
+  id: number;
+  name: string;
+  location: string;
+  availableSlots: number;
+  totalSlots: number;
+  status: string;
+}
+
+export default function MapScreen({ navigation }: any) {
+  const { token } = useAuth();
+  const [stations, setStations] = useState<Station[]>([]);
+  const [userLocation, setUserLocation] = useState<any>(null);
+  const [region, setRegion] = useState({
+    latitude: 21.0063,
+    longitude: 105.8433,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05
+  });
+
+  useEffect(() => {
+    getUserLocation();
+    fetchStations();
+  }, []);
+
+  const getUserLocation = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Quyền truy cập vị trí bị từ chối');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude
+      });
+      
+      setRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05
+      });
+    } catch (error) {
+      console.error('Get location error:', error);
+    }
+  };
+
+  const fetchStations = async () => {
+    try {
+      const response = await fetch('https://your-backend.herokuapp.com/api/stations?status=active', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStations(data.stations);
+      }
+    } catch (error) {
+      console.error('Fetch stations error:', error);
+    }
+  };
+
+  const parseLocation = (locationString: string) => {
+    const [address, lat, lng] = locationString.split(';');
+    return {
+      address,
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lng)
+    };
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    return distance.toFixed(1);
+  };
+
+  return (
+    <View style={styles.container}>
+      <MapView
+        provider={PROVIDER_GOOGLE}
+        style={styles.map}
+        region={region}
+        showsUserLocation={true}
+      >
+        {stations.map(station => {
+          const loc = parseLocation(station.location);
+          return (
+            <Marker
+              key={station.id}
+              coordinate={{
+                latitude: loc.latitude,
+                longitude: loc.longitude
+              }}
+              title={station.name}
+              description={`Available: ${station.availableSlots}/${station.totalSlots}`}
+            />
+          );
+        })}
+      </MapView>
+
+      <View style={styles.stationList}>
+        <FlatList
+          data={stations}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => {
+            const loc = parseLocation(item.location);
+            const distance = userLocation 
+              ? calculateDistance(userLocation.latitude, userLocation.longitude, loc.latitude, loc.longitude)
+              : 'N/A';
+
+            return (
+              <View style={styles.stationCard}>
+                <View style={styles.stationInfo}>
+                  <Text style={styles.stationName}>{item.name}</Text>
+                  <Text style={styles.stationDistance}>{distance}km</Text>
+                </View>
+                <Text style={styles.stationAvailability}>
+                  Available: {item.availableSlots}/{item.totalSlots}
+                </Text>
+                <TouchableOpacity
+                  style={styles.detailsButton}
+                  onPress={() => navigation.navigate('StationDetails', { stationId: item.id })}
+                >
+                  <Text style={styles.detailsButtonText}>Chi tiết</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
+  map: {
+    flex: 1
+  },
+  stationList: {
+    height: 250,
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16
+  }
+  // ... more styles
+});
+```
+
+2.5.4.3. QRScannerScreen - Quét mã QR
+
+Implementation (QRScannerScreen.tsx):
+```typescript
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Camera, CameraView } from 'expo-camera';
+import { useAuth } from '../contexts';
+
+export default function QRScannerScreen({ navigation, route }: any) {
+  const { token } = useAuth();
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [scanned, setScanned] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === 'granted');
+    })();
+  }, []);
+
+  const handleBarCodeScanned = async ({ type, data }: any) => {
+    setScanned(true);
+    
+    try {
+      // Parse QR data: format "STATION_ID:1"
+      const stationId = parseInt(data.split(':')[1]);
+
+      // Call API to start swap
+      const response = await fetch('https://your-backend.herokuapp.com/api/transactions/start-swap', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ stationId })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        Alert.alert(
+          'Thành công',
+          result.message,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                navigation.navigate('Home');
+                // TODO: Navigate to transaction confirmation screen
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Lỗi', result.message);
+        setScanned(false);
+      }
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể kết nối với server');
+      setScanned(false);
+    }
+  };
+
+  if (hasPermission === null) {
+    return <Text>Đang yêu cầu quyền camera...</Text>;
+  }
+  if (hasPermission === false) {
+    return <Text>Không có quyền truy cập camera</Text>;
+  }
+
+  return (
+    <View style={styles.container}>
+      <CameraView
+        style={styles.camera}
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        barcodeScannerSettings={{
+          barcodeTypes: ['qr']
+        }}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.scanArea} />
+          <Text style={styles.instructionText}>
+            Đưa mã QR vào khung để quét
+          </Text>
+        </View>
+      </CameraView>
+
+      {scanned && (
+        <TouchableOpacity
+          style={styles.rescanButton}
+          onPress={() => setScanned(false)}
+        >
+          <Text style={styles.rescanText}>Quét lại</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
+  camera: {
+    flex: 1
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)'
+  },
+  scanArea: {
+    width: 250,
+    height: 250,
+    borderWidth: 2,
+    borderColor: '#FFF',
+    backgroundColor: 'transparent'
+  },
+  instructionText: {
+    color: '#FFF',
+    marginTop: 24,
+    fontSize: 16
+  }
+  // ... more styles
+});
+```
+
+2.5.4.4. WalletScreen - Ví tiền
+
+Implementation snippet:
+```typescript
+export default function WalletScreen({ navigation }: any) {
+  const { user, token, updateUser } = useAuth();
+  const [transactions, setTransactions] = useState([]);
+
+  const handleRecharge = async (amount: number) => {
+    try {
+      const response = await fetch('https://your-backend.herokuapp.com/api/payment/momo/create', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Open MoMo payment URL
+        Linking.openURL(data.payUrl);
+      }
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể tạo đơn nạp tiền');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.balanceCard}>
+        <Text style={styles.balanceLabel}>Số dư hiện tại</Text>
+        <Text style={styles.balanceAmount}>{user?.balance.toLocaleString()}đ</Text>
+        
+        <View style={styles.rechargeOptions}>
+          <TouchableOpacity onPress={() => handleRecharge(50000)}>
+            <Text>50,000đ</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleRecharge(100000)}>
+            <Text>100,000đ</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleRecharge(200000)}>
+            <Text>200,000đ</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <Text style={styles.sectionTitle}>Lịch sử giao dịch</Text>
+      <FlatList
+        data={transactions}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <WalletTransactionItem transaction={item} />
+        )}
+      />
+    </View>
+  );
+}
+```
+
+2.5.5. API INTEGRATION
+
+2.5.5.1. API Client Setup
+
+File: services/api.ts
+
+```typescript
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_BASE_URL = 'https://your-backend.herokuapp.com/api';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Request interceptor - Add token
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor - Handle errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired, logout
+      AsyncStorage.removeItem('token');
+      AsyncStorage.removeItem('user');
+      // Navigate to login screen
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default apiClient;
+```
+
+2.5.5.2. Custom Hooks for Data Fetching
+
+File: hooks/useStations.ts
+
+```typescript
+import { useState, useEffect } from 'react';
+import apiClient from '../services/api';
+
+export function useStations(status?: string) {
+  const [stations, setStations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchStations();
+  }, [status]);
+
+  const fetchStations = async () => {
+    try {
+      setLoading(true);
+      const params = status ? { status } : {};
+      const response = await apiClient.get('/stations', { params });
+      setStations(response.data.stations);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { stations, loading, error, refetch: fetchStations };
+}
+```
+
+================================================================================
+KẾT LUẬN PHẦN 2.5
+
+Thiết kế ứng dụng di động của hệ thống EV-Swap đảm bảo:
+1. User experience mượt mà với navigation rõ ràng
+2. Component-based architecture dễ bảo trì và mở rộng
+3. State management hiệu quả với Context API
+4. Real-time data với hooks và API integration
+5. Responsive UI phù hợp với nhiều kích thước màn hình
+6. Multi-language và theme switching
+7. Offline-first approach với AsyncStorage
+
+Ứng dụng mobile là cầu nối giữa người dùng và hệ thống backend, mang lại trải 
+nghiệm đổi pin nhanh chóng, tiện lợi và an toàn.
+================================================================================

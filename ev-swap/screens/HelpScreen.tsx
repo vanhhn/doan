@@ -164,7 +164,7 @@ const HelpScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  123-456-7890
+                  0335001157
                 </Text>
               </TouchableOpacity>
             </View>
@@ -193,7 +193,7 @@ const HelpScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  support@evswap.com
+                  vietanhvmo@gmail.com
                 </Text>
               </TouchableOpacity>
             </View>

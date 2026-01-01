@@ -52,7 +52,35 @@
     "nearbyStations": "Các trạm gần đây"
   },
   "history": {
+    "title": "Lịch sử giao dịch",
     "noHistory": "Chưa có lịch sử giao dịch."
+  },
+  "reservation": {
+    "title": "Đặt trước pin",
+    "subtitle": "Chọn trạm để đặt chỗ trước 30 phút",
+    "reserve": "Đặt chỗ",
+    "reserved": "Hết chỗ",
+    "availableBatteries": "pin có sẵn",
+    "noBatteries": "Hết pin",
+    "noStations": "Không có trạm nào",
+    "loading": "Đang tải danh sách trạm...",
+    "confirmTitle": "Xác nhận đặt trước",
+    "confirmMessage": "Bạn muốn đặt chỗ tại {stationName}?\n\nThời gian giữ chỗ: 30 phút",
+    "successMessage": "Vui lòng đến trạm trong vòng 30 phút để quét QR."
+  },
+  "momoPayment": {
+    "title": "Thanh toán MoMo",
+    "loading": "Đang tải...",
+    "error": "Không thể tải thanh toán",
+    "cancelTitle": "Hủy thanh toán?",
+    "cancelMessage": "Bạn có chắc muốn hủy giao dịch này?",
+    "no": "Không",
+    "cancel": "Hủy",
+    "success": "Thành công",
+    "successMessage": "Nạp tiền thành công!",
+    "failed": "Thất bại",
+    "failedMessage": "Thanh toán không thành công. Vui lòng thử lại.",
+    "ok": "OK"
   },
   "wallet": {
     "currentBalance": "Số dư hiện tại",

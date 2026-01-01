@@ -1,0 +1,316 @@
+================================================================================
+CHƯƠNG 1: CÁC CÔNG NGHỆ NỀN TẢNG
+Phần thực hiện: Ngô Việt Anh
+================================================================================
+
+1.6.3. REACT NATIVE VÀ EXPO - NỀN TẢNG PHÁT TRIỂN ỨNG DỤNG DI ĐỘNG
+
+1.6.3.1. Giới thiệu React Native
+
+React Native là một framework mã nguồn mở được phát triển bởi Meta (Facebook), 
+cho phép xây dựng ứng dụng di động đa nền tảng sử dụng JavaScript và React. 
+Khác với các framework hybrid truyền thống như Cordova hay Ionic, React Native 
+biên dịch code JavaScript thành các native components thực sự, mang lại hiệu 
+năng gần như tương đương với ứng dụng native thuần túy.
+
+Đặc điểm nổi bật:
+- Cross-platform: Viết code một lần, chạy trên cả iOS và Android
+- Hot Reloading: Cập nhật UI ngay lập tức khi thay đổi code mà không cần build lại
+- Component-based Architecture: Tổ chức code theo mô hình component tái sử dụng
+- Native Performance: Sử dụng native UI components thay vì WebView
+- Large Community: Hệ sinh thái thư viện phong phú với hàng nghìn packages
+
+1.6.3.2. Expo SDK - Công cụ hỗ trợ phát triển
+
+Expo là một bộ công cụ và dịch vụ được xây dựng xung quanh React Native, giúp 
+đơn giản hóa quy trình phát triển và triển khai ứng dụng.
+
+Trong dự án EV-Swap, nhóm sử dụng Expo SDK phiên bản 54.0.0 với các modules:
+
+• expo-camera (v17.0.9): Xử lý quét mã QR để nhận diện trạm đổi pin
+• expo-location (v19.0.7): Lấy tọa độ GPS của người dùng để tính khoảng cách
+• react-native-maps (v1.20.1): Hiển thị bản đồ với markers các trạm sạc
+• expo-notifications (v0.32.14): Gửi thông báo push khi giao dịch hoàn tất
+• @react-navigation: Quản lý điều hướng giữa các màn hình
+
+File package.json của ứng dụng:
+```
+{
+  "name": "ev-swap",
+  "version": "1.0.0",
+  "dependencies": {
+    "expo": "~54.0.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "expo-camera": "^17.0.9",
+    "expo-location": "^19.0.7",
+    "react-native-maps": "1.20.1",
+    "@react-navigation/native": "^6.1.9",
+    "@react-navigation/bottom-tabs": "^6.5.11",
+    "@react-navigation/native-stack": "^6.9.17"
+  }
+}
+```
+
+1.6.3.3. Lý do lựa chọn React Native & Expo
+
+Trong bối cảnh dự án đồ án tốt nghiệp với thời gian và nguồn lực hạn chế, 
+việc chọn React Native kết hợp Expo mang lại những lợi ích sau:
+
+a) Phát triển đa nền tảng hiệu quả:
+- Một codebase duy nhất hỗ trợ cả iOS và Android
+- Tiết kiệm 40-50% thời gian so với phát triển native riêng biệt
+- Đảm bảo tính nhất quán UI/UX trên cả hai nền tảng
+
+b) Tích hợp tính năng nhanh chóng:
+- Expo cung cấp native modules đã được tối ưu sẵn (Camera, Maps, Location)
+- Không cần viết native code (Java/Kotlin hoặc Swift/Objective-C)
+- Hot reloading giúp debug và test nhanh hơn
+
+c) Phù hợp với yêu cầu dự án:
+- Hệ thống cần hiển thị bản đồ → react-native-maps tích hợp Google Maps
+- Quét QR code → expo-camera hỗ trợ barcode scanner
+- Định vị trạm gần nhất → expo-location lấy GPS coordinates
+- Giao diện tương tác thời gian thực → React hooks và Context API
+
+d) Dễ dàng triển khai và bảo trì:
+- Build APK/IPA qua Expo Application Services (EAS)
+- Over-the-air updates cho phép cập nhật ứng dụng mà không qua Store
+- Documentation chi tiết và cộng đồng hỗ trợ tích cực
+
+
+1.6.4. POSTGRESQL - HỆ QUẢN TRỊ CƠ SỞ DỮ LIỆU
+
+1.6.4.1. Giới thiệu PostgreSQL
+
+PostgreSQL là hệ quản trị cơ sở dữ liệu quan hệ (RDBMS) mã nguồn mở, được 
+đánh giá cao về độ tin cậy, tính năng mạnh mẽ và khả năng tuân thủ chuẩn SQL.
+
+Đặc điểm nổi bật:
+- ACID Compliance: Đảm bảo tính toàn vẹn dữ liệu trong giao dịch
+- Advanced Data Types: Hỗ trợ JSON, Array, UUID, Geometry...
+- Foreign Keys & Constraints: Đảm bảo tính nhất quán dữ liệu
+- MVCC (Multi-Version Concurrency Control): Xử lý đồng thời hiệu quả
+- Extensibility: Có thể mở rộng với custom functions và extensions
+
+1.6.4.2. PostgreSQL trong dự án EV-Swap
+
+Hệ thống sử dụng PostgreSQL 14 được deploy trên AWS RDS thông qua Heroku 
+Postgres add-on. Cơ sở dữ liệu bao gồm 12 bảng chính:
+
+• stations: Quản lý thông tin các trạm đổi pin (tên, vị trí, trạng thái)
+• batteries: Theo dõi pin (UID, chu kỳ sạc, trạng thái)
+• customers: Lưu trữ thông tin người dùng và số dư ví
+• slots: Quản lý các khay chứa pin trong trạm
+• transaction_logs: Ghi nhận lịch sử giao dịch đổi pin
+• payments: Xử lý thanh toán qua MoMo
+• reservations: Hệ thống đặt chỗ trước
+• feedbacks: Đánh giá của người dùng
+
+Kết nối database được cấu hình qua biến môi trường:
+```
+DATABASE_URL=postgresql://user:password@host:5432/ev_swap_db?schema=public
+```
+
+1.6.4.3. Lý do chọn PostgreSQL thay vì NoSQL
+
+So sánh với các giải pháp NoSQL như MongoDB:
+
+a) Tính toàn vẹn dữ liệu giao dịch:
+- Giao dịch đổi pin yêu cầu ACID (Atomicity, Consistency, Isolation, Durability)
+- Ví dụ: Khi đổi pin, cần đảm bảo:
+  + Trừ tiền ví khách hàng
+  + Cập nhật trạng thái pin cũ/mới
+  + Ghi nhận transaction log
+  + Cập nhật slot trạm
+→ Tất cả phải thành công hoặc rollback toàn bộ
+
+b) Quan hệ phức tạp giữa các thực thể:
+- Customer có thể có nhiều Transactions (1-N)
+- Transaction liên kết với Customer, Station, OldBattery, NewBattery (N-1)
+- Station có nhiều Slots, Slot chứa một Battery (1-N, N-1)
+→ Foreign keys đảm bảo referential integrity
+
+c) Truy vấn phức tạp:
+- Thống kê số lần đổi pin theo trạm: JOIN giữa Transactions và Stations
+- Lọc trạm có pin đầy: WHERE với điều kiện lồng nhau trên Slots
+- Tính toán số dư ví: SUM các giao dịch nạp tiền và trừ chi phí đổi pin
+→ SQL queries mạnh mẽ hơn NoSQL aggregation pipeline
+
+d) Tính nhất quán và đồng bộ:
+- Nhiều người dùng có thể đổi pin cùng lúc tại một trạm
+- PostgreSQL MVCC xử lý concurrent transactions an toàn
+- Locks đảm bảo không xảy ra race condition khi cập nhật slot
+
+
+1.6.5. PRISMA ORM - QUẢN LÝ CƠ SỞ DỮ LIỆU TYPE-SAFE
+
+1.6.5.1. Giới thiệu Prisma
+
+Prisma là một ORM (Object-Relational Mapping) thế hệ mới cho Node.js và 
+TypeScript, cung cấp type safety và developer experience vượt trội.
+
+Trong dự án, Prisma v5.22.0 được sử dụng với các tính năng:
+- Prisma Schema: Định nghĩa models và relations bằng DSL trực quan
+- Prisma Client: Auto-generated client với IntelliSense đầy đủ
+- Prisma Migrate: Quản lý database schema migrations
+- Prisma Studio: GUI để xem và chỉnh sửa dữ liệu
+
+Ví dụ model Station trong schema.prisma:
+```
+model Station {
+  id               Int      @id @default(autoincrement())
+  name             String   @unique @db.VarChar(100)
+  location         String?  @db.VarChar(255)
+  status           String   @default("inactive")
+  totalSlots       Int      @default(6)
+  availableSlots   Int      @default(6)
+  
+  slots            Slot[]
+  transactionLogs  TransactionLog[]
+  reservations     Reservation[]
+  
+  @@map("stations")
+}
+```
+
+1.6.5.2. Lợi ích của Prisma trong dự án
+
+a) Type Safety:
+- Auto-completion khi viết queries
+- Compile-time error detection
+- Giảm thiểu bugs do typo hoặc sai kiểu dữ liệu
+
+b) Productivity:
+- Viết ít code hơn so với raw SQL queries
+- Relations được xử lý tự động (eager/lazy loading)
+- Migrations tự động từ schema changes
+
+c) Maintainability:
+- Single source of truth (schema.prisma)
+- Easy to understand data model
+- Documentation tự động từ schema
+
+
+1.6.6. NODE.JS VÀ EXPRESS - BACKEND FRAMEWORK
+
+1.6.6.1. Node.js Runtime
+
+Node.js là JavaScript runtime được xây dựng trên V8 engine của Chrome, cho 
+phép chạy JavaScript trên server-side.
+
+Đặc điểm:
+- Event-driven, non-blocking I/O: Xử lý concurrent requests hiệu quả
+- Single-threaded với Event Loop: Phù hợp với I/O-heavy applications
+- NPM ecosystem: Hàng triệu packages có sẵn
+- Cross-platform: Chạy trên Windows, Linux, macOS
+
+1.6.6.2. Express Framework
+
+Express là web framework minimal và linh hoạt cho Node.js, được sử dụng để 
+xây dựng RESTful API trong dự án EV-Swap.
+
+Cấu trúc backend:
+```
+ev-swap-backend/
+├── src/
+│   ├── controllers/     # Business logic
+│   │   ├── auth.controller.js
+│   │   ├── station.controller.js
+│   │   ├── transaction.controller.js
+│   ├── routes/          # API endpoints
+│   │   ├── auth.routes.js
+│   │   ├── station.routes.js
+│   ├── middleware/      # Authentication, validation
+│   │   ├── auth.middleware.js
+│   ├── config/          # Database connection
+│   └── index.js         # Entry point
+```
+
+Package.json dependencies:
+```
+{
+  "dependencies": {
+    "express": "^4.21.1",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5"
+  }
+}
+```
+
+1.6.6.3. RESTful API Architecture
+
+Backend cung cấp 25+ endpoints theo chuẩn REST:
+
+Authentication:
+- POST /api/auth/register: Đăng ký tài khoản
+- POST /api/auth/login: Đăng nhập (trả về JWT token)
+- POST /api/auth/reset-password: Đặt lại mật khẩu qua số điện thoại
+
+Stations Management:
+- GET /api/stations: Lấy danh sách trạm (có filter theo status)
+- GET /api/stations/:id: Chi tiết trạm và slots
+
+Transactions:
+- POST /api/transactions/start-swap: Bắt đầu đổi pin
+- PUT /api/transactions/:id/complete-swap: Hoàn tất giao dịch
+
+Profile & Wallet:
+- GET /api/me: Thông tin người dùng hiện tại
+- GET /api/me/history: Lịch sử giao dịch
+- POST /api/payment/momo/create: Tạo đơn nạp tiền
+
+IoT Communication:
+- POST /api/iot/battery/validate: Xác thực pin qua RFID
+- POST /api/iot/slot/status-update: Cập nhật trạng thái slot
+
+
+1.6.7. CÔNG NGHỆ PHỤ TRỢ KHÁC
+
+1.6.7.1. JSON Web Token (JWT)
+
+JWT được sử dụng để xác thực người dùng:
+- Stateless authentication: Server không cần lưu session
+- Payload chứa: userId, username, role
+- Expiry: 7 ngày
+- Middleware kiểm tra token ở mọi protected routes
+
+1.6.7.2. Bcrypt
+
+Bcryptjs dùng để hash password:
+- Salt rounds: 10
+- One-way hashing: Không thể decrypt
+- So sánh với bcrypt.compare() khi login
+
+1.6.7.3. Google Maps API
+
+Tích hợp vào ứng dụng mobile qua react-native-maps:
+- Hiển thị bản đồ với custom markers
+- Tính khoảng cách từ vị trí người dùng đến trạm
+- API Key được cấu hình trong AndroidManifest.xml
+
+1.6.7.4. MoMo Payment Gateway
+
+Tích hợp thanh toán điện tử:
+- Tạo request_id và order_id unique
+- Ký HMAC SHA256 với secret key
+- Redirect người dùng đến MoMo app
+- Nhận callback khi thanh toán thành công
+
+
+================================================================================
+KẾT LUẬN CHƯƠNG 1
+
+Việc lựa chọn công nghệ trong dự án EV-Swap dựa trên các tiêu chí:
+1. Phù hợp với yêu cầu chức năng (Maps, QR, Payment)
+2. Tối ưu thời gian phát triển (React Native đa nền tảng)
+3. Đảm bảo tính toàn vẹn dữ liệu (PostgreSQL với ACID)
+4. Dễ bảo trì và mở rộng (Prisma ORM, Express RESTful)
+5. Cộng đồng hỗ trợ mạnh mẽ
+
+Stack công nghệ này đã giúp nhóm hoàn thành dự án đúng tiến độ với chất 
+lượng ổn định, sẵn sàng cho việc triển khai thực tế.
+================================================================================

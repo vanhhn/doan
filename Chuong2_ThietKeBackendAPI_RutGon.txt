@@ -1,0 +1,91 @@
+================================================================================
+CHƯƠNG 2: PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG
+Phần 2.4: THIẾT KẾ BACKEND VÀ API
+Phần thực hiện: Ngô Việt Anh
+================================================================================
+
+2.4.1. KIẾN TRÚC BACKEND
+
+2.4.1.1. Tổng quan kiến trúc phân lớp
+
+Hệ thống EV-Swap được thiết kế với hai backend riêng biệt, mỗi backend phục vụ một nhóm đối tượng người dùng: Mobile Backend dành cho khách hàng sử dụng ứng dụng di động, và Admin Backend dành cho quản trị viên quản lý hệ thống qua giao diện web. Cả hai backend đều kết nối đến cùng cơ sở dữ liệu PostgreSQL nhưng khác biệt về kiến trúc, phương thức xác thực và chức năng.
+
+Mobile Backend áp dụng mô hình kiến trúc phân lớp bao gồm năm tầng chính: Routes Layer định nghĩa các endpoint API, Middleware Layer xử lý xác thực JWT và validation, Controllers Layer triển khai business logic, Prisma ORM Layer quản lý truy vấn cơ sở dữ liệu, và Database Layer là PostgreSQL lưu trữ 12 bảng nghiệp vụ. Kiến trúc này đảm bảo tách biệt rõ ràng các mối quan tâm và hỗ trợ bảo trì, mở rộng dễ dàng.
+
+Admin Backend sử dụng kiến trúc đơn giản hơn với Express.js kết nối trực tiếp đến PostgreSQL thông qua pg driver. Backend này tập trung vào các thao tác CRUD và báo cáo thống kê, phục vụ các trang HTML quản trị thay vì API JSON. Xác thực được thực hiện dựa trên session thay vì JWT token.
+
+So sánh hai backend: Mobile Backend sử dụng Prisma ORM, xác thực JWT stateless, phục vụ khách hàng qua endpoints có tiền tố /api/. Admin Backend sử dụng pg driver với raw SQL, xác thực session-based stateful, phục vụ quản trị viên qua root paths. Lý do tách biệt bao gồm bảo mật, khả năng mở rộng độc lập, lựa chọn công nghệ phù hợp, triển khai riêng biệt và phân quyền rõ ràng.
+
+2.4.1.2. Cấu trúc thư mục
+
+Mobile Backend được tổ chức theo cấu trúc thư mục phân lớp rõ ràng: thư mục src chứa index.js là điểm khởi đầu ứng dụng, config chứa cấu hình Prisma client, routes định nghĩa các routes API theo module, controllers chứa business logic, và middleware xử lý xác thực JWT. Thư mục prisma chứa schema định nghĩa cấu trúc cơ sở dữ liệu.
+
+Admin Backend có cấu trúc đơn giản hơn với server.js chứa toàn bộ code backend, các file HTML tĩnh cho giao diện quản trị, thư mục uploads lưu trữ tạm file import Excel, và Procfile cấu hình deployment trên Heroku.
+
+2.4.2. CHI TIẾT CÁC API ENDPOINTS
+
+2.4.2.1. Customer Authentication APIs
+
+Mobile Backend cung cấp ba endpoint xác thực chính cho khách hàng. Endpoint đăng ký nhận thông tin khách hàng, hash mật khẩu bằng bcrypt, kiểm tra username trùng lặp và tạo tài khoản mới với số dư ban đầu. Endpoint đăng nhập xác thực thông tin, tạo JWT token có thời hạn 7 ngày và trả về thông tin khách hàng kèm token. Endpoint đặt lại mật khẩu cho phép khách hàng thay đổi mật khẩu thông qua số điện thoại đã đăng ký.
+
+JWT token được cấu trúc với header chứa thuật toán mã hóa HS256, payload chứa userId và username, và signature đảm bảo tính toàn vẹn. Middleware xác thực kiểm tra token trong header Authorization, verify signature và decode payload trước khi cho phép truy cập các endpoint được bảo vệ.
+
+2.4.2.2. Admin Authentication APIs
+
+Admin Backend cung cấp hệ thống xác thực riêng biệt cho quản trị viên. Endpoint đăng nhập kiểm tra thông tin trong bảng admins, verify password với bcrypt và trả về thông tin admin bao gồm role để phân quyền. Khác với customer login, admin không sử dụng JWT mà dựa vào session-based authentication.
+
+Endpoint thống kê dashboard sử dụng một query phức tạp với nhiều subqueries để tính toán các chỉ số: tổng số trạm, số trạm hoạt động, số pin khả dụng, khách hàng mới trong tháng và số trạm cần bảo trì. Cách tiếp cận này tối ưu hiệu suất chỉ với một round-trip đến database thay vì nhiều queries riêng lẻ.
+
+Các endpoint thống kê khác bao gồm báo cáo số pin theo trạm sử dụng LEFT JOIN và GROUP BY, thống kê lượt đổi pin theo tháng và trạm với EXTRACT functions để filter theo thời gian.
+
+2.4.2.3. Station Management APIs
+
+Admin Backend cung cấp bộ API quản lý trạm đầy đủ các chức năng CRUD. Endpoint lấy danh sách trạm, xem chi tiết trạm kèm danh sách slots, thêm trạm mới và cập nhật thông tin trạm. 
+
+Đặc biệt, logic cập nhật trạm có validation phức tạp: khi giảm số slots, hệ thống kiểm tra số lượng slot trống đủ để xóa, nếu không đủ trả về lỗi, nếu đủ trả về danh sách slots cần xóa để admin xác nhận. Logic xóa trạm kiểm tra tất cả slots đều trống trước khi cho phép xóa, tránh mất dữ liệu quan trọng.
+
+API quản lý slots cho phép thêm slot mới với slot_number tự động tăng, và xóa slot khỏi trạm. Các thao tác này đảm bảo tính nhất quán dữ liệu với foreign key constraints và cascade delete.
+
+2.4.2.4. Battery Management APIs
+
+Admin Backend cung cấp API quản lý pin bao gồm lấy danh sách pin, tạo UID tự động theo format BAT + số tăng dần, thêm pin mới vào hệ thống. Đặc biệt, hệ thống hỗ trợ import hàng loạt pin từ file Excel bằng thư viện XLSX và Multer.
+
+Quy trình import bao gồm: upload file lên server, đọc Excel file, parse dữ liệu từng dòng, kiểm tra UID trùng lặp và insert các pin mới. Kết quả trả về số lượng pin đã thêm và số lượng bị bỏ qua do trùng lặp. Tính năng này giúp quản trị viên khởi tạo dữ liệu nhanh chóng.
+
+2.4.2.5. Transaction APIs
+
+Mobile Backend cung cấp hai endpoint chính cho quy trình đổi pin. Endpoint khởi tạo giao dịch kiểm tra khách hàng có pin cũ, tìm slot trống để nhận pin cũ, tìm pin mới khả dụng, tạo transaction log với status pending, cập nhật trạng thái pin cũ sang charging, cập nhật slot và unlock slot chứa pin mới để hardware có thể mở khóa.
+
+Endpoint hoàn tất giao dịch sử dụng Prisma transaction để đảm bảo ACID properties. Các bước bao gồm: kiểm tra số dư khách hàng, cập nhật transaction status sang completed, trừ tiền và tăng totalSwaps của khách hàng, cập nhật currentBatteryUid, thay đổi status pin mới sang in_use, cập nhật slot và giảm availableSlots của trạm. Tất cả thao tác này được thực hiện trong một transaction, nếu có lỗi toàn bộ sẽ rollback.
+
+2.4.2.6. Payment APIs
+
+Mobile Backend tích hợp cổng thanh toán MoMo cho chức năng nạp tiền. Endpoint tạo đơn nạp tiền sinh orderId và requestId duy nhất, tạo signature HMAC-SHA256 để bảo mật, gửi request đến MoMo và nhận payUrl để redirect khách hàng.
+
+Endpoint callback xử lý phản hồi từ MoMo sau khi khách hàng thanh toán. Hệ thống verify signature để đảm bảo request hợp lệ, kiểm tra resultCode, nếu thành công cập nhật payment status và cộng tiền vào ví khách hàng trong một transaction, nếu thất bại lưu lại error message cho mục đích audit. Dữ liệu JSON từ MoMo được lưu vào trường momoData kiểu JSONB để debug và trace giao dịch.
+
+2.4.2.7. IoT Communication APIs
+
+Mobile Backend cung cấp API cho thiết bị IoT giao tiếp với hệ thống. Endpoint xác thực pin nhận batteryUid từ RFID reader, kiểm tra tính hợp lệ và trả về thông tin pin. Endpoint cập nhật trạng thái slot nhận dữ liệu từ sensor về sự hiện diện của pin, cập nhật database real-time.
+
+Các endpoint này sử dụng header X-IoT-Auth để xác thực thiết bị IoT thay vì JWT token, đảm bảo chỉ thiết bị được ủy quyền mới có thể tương tác với hệ thống.
+
+2.4.3. AUTHENTICATION VÀ ERROR HANDLING
+
+Mobile Backend triển khai middleware xác thực JWT để bảo vệ các endpoint yêu cầu đăng nhập. Middleware kiểm tra token trong Authorization header, verify với secret key, decode payload để lấy userId và username, xử lý các trường hợp token hết hạn hoặc không hợp lệ. Middleware này được áp dụng cho các routes liên quan đến profile, transaction và payment.
+
+Centralized error handling được triển khai thông qua global error handler middleware. Lỗi được phân loại theo statusCode, trong môi trường development trả về stack trace để debug, trong production chỉ trả về message để bảo mật. Custom error class AppError hỗ trợ tạo lỗi với statusCode và message cụ thể.
+
+Admin Backend không sử dụng middleware pattern mà kiểm tra authentication và xử lý lỗi trực tiếp trong mỗi route handler bằng try-catch blocks.
+
+2.4.4. DEPLOYMENT VÀ BẢO MẬT
+
+Cả hai backend được triển khai trên nền tảng Heroku với PostgreSQL addon. Mobile Backend cấu hình environment variables bao gồm DATABASE_URL, JWT_SECRET và MOMO_SECRET_KEY. Admin Backend cấu hình tương tự nhưng không cần JWT_SECRET.
+
+Các biện pháp bảo mật được áp dụng: hash password bằng bcrypt với salt rounds 10, JWT token có thời hạn giới hạn, verify signature cho MoMo callback, CORS configuration hạn chế origin, prepared statements tránh SQL injection, rate limiting ngăn chặn brute force, HTTPS encryption cho tất cả connections.
+
+================================================================================
+KẾT LUẬN
+
+Thiết kế Backend API của hệ thống EV-Swap đáp ứng đầy đủ yêu cầu nghiệp vụ với kiến trúc phân lớp rõ ràng, xác thực bảo mật và xử lý giao dịch đảm bảo tính toàn vẹn dữ liệu. Mobile Backend phục vụ khách hàng với RESTful API, xác thực JWT và tích hợp cổng thanh toán MoMo. Admin Backend hỗ trợ quản trị viên với dashboard thống kê, quản lý CRUD và import dữ liệu hàng loạt. Việc tách biệt hai backend đảm bảo bảo mật, khả năng mở rộng và lựa chọn công nghệ phù hợp cho từng use case.
+================================================================================

@@ -1,0 +1,286 @@
+================================================================================
+PHẦN BÁO CÁO KỸ THUẬT: TRIỂN KHAI (DEPLOY) WEB QUẢN TRỊ EV-SWAP-ADMIN LÊN HEROKU
+Tác giả (giả định): Sinh viên CNTT – chuẩn bị báo cáo đồ án
+Hệ thống: EV-Swap (Admin Web)
+Ngày: 15/12/2025
+================================================================================
+
+1. MỤC TIÊU TRIỂN KHAI
+
+Mục tiêu của phần triển khai là đưa website quản trị `ev-swap-admin` lên môi trường 
+production để quản trị viên có thể truy cập qua Internet, thực hiện các nghiệp vụ:
+- Đăng nhập quản trị (admin authentication)
+- Quản lý trạm (stations), pin (batteries), khách hàng (customers), phản hồi (feedback)
+- Theo dõi dashboard thống kê (controller dashboard)
+
+Yêu cầu triển khai:
+- Ứng dụng chạy ổn định trên Heroku (PaaS)
+- Kết nối đúng PostgreSQL (dùng `DATABASE_URL` trên Heroku)
+- Cấu hình process theo `Procfile` (Heroku Dyno)
+- Có khả năng giám sát log, khôi phục khi lỗi
+
+
+2. THÔNG TIN HỆ THỐNG VÀ CẤU HÌNH THỰC TẾ TRONG DỰ ÁN
+
+2.1. Kiến trúc triển khai
+
+`ev-swap-admin` là một web interface dạng HTML/CSS/JavaScript kết hợp Express.js.
+Ứng dụng có vai trò:
+- Serve các trang HTML (ví dụ: `SignIn.html`, `Station.html`, `Battery.html`...)
+- Cung cấp các endpoint nội bộ phục vụ thao tác CRUD tới PostgreSQL (qua `pg`)
+
+2.2. Công nghệ và phụ thuộc
+
+- Runtime: Node.js (theo Heroku Node.js buildpack)
+- Web framework: Express.js
+- Database driver: `pg`
+- Upload file: `multer`
+- Xử lý Excel: `xlsx`, `exceljs`
+- Mã hóa mật khẩu: `bcrypt` (và/hoặc `bcryptjs`)
+
+Dự án sử dụng `package.json` với script:
+- `start`: `node server.js`
+
+2.3. Quy ước process của Heroku
+
+Ứng dụng khai báo `Procfile`:
+- `web: node server.js`
+
+Điều này đảm bảo Heroku biết process type `web` để expose HTTP port.
+
+2.4. Cấu hình kết nối cơ sở dữ liệu
+
+Trong `server.js`, ứng dụng kết nối PostgreSQL theo ưu tiên:
+- Production: dùng biến môi trường `process.env.DATABASE_URL` (Heroku cấp)
+- Local: fallback sang chuỗi kết nối local (phục vụ phát triển)
+
+Khi chạy trên Heroku, cấu hình SSL được bật ở dạng:
+- `ssl: { rejectUnauthorized: false }`
+
+Ghi chú kỹ thuật:
+- Heroku Postgres thường yêu cầu SSL; cấu hình trên giúp kết nối ổn định.
+- Không hard-code credentials production trong source code.
+
+
+3. CHUẨN BỊ TRƯỚC KHI DEPLOY
+
+3.1. Điều kiện và công cụ
+
+- Có tài khoản Heroku
+- Cài đặt Heroku CLI (trên máy phát triển)
+- Cài đặt Git
+- Dự án có thể chạy local để kiểm chứng trước khi deploy
+
+3.2. Kiểm tra chạy local (khuyến nghị)
+
+Tại thư mục `ev-swap-admin`:
+
+```bash
+cd /home/vanh/doan/ev-swap-admin
+npm install
+npm start
+```
+
+Kỳ vọng:
+- Server chạy (mặc định `PORT=3000` nếu local tự cấu hình)
+- Truy cập được trang đăng nhập tại: `http://localhost:3000/`
+
+3.3. Chuẩn bị biến môi trường
+
+Trên Heroku, cần tối thiểu:
+- `DATABASE_URL`: PostgreSQL connection string
+
+Tuỳ chọn (khuyến nghị khi tách môi trường):
+- `NODE_ENV=production`
+
+
+4. QUY TRÌNH DEPLOY LÊN HEROKU (THỰC HIỆN TRIỂN KHAI)
+
+4.1. Tạo ứng dụng Heroku
+
+```bash
+# Đăng nhập Heroku
+heroku login
+
+# Tạo app mới (Heroku tự sinh tên nếu không chỉ định)
+heroku create <ten-app>
+```
+
+Trong dự án đã có URL production tham khảo:
+- https://ev-swap-admin-2025-8a16961f50e5.herokuapp.com/
+
+4.2. Cấu hình Heroku Postgres và DATABASE_URL
+
+Nếu dùng Heroku Postgres add-on:
+
+```bash
+# Tạo database (tùy gói)
+heroku addons:create heroku-postgresql:mini --app <ten-app>
+
+# Kiểm tra biến môi trường DATABASE_URL
+heroku config:get DATABASE_URL --app <ten-app>
+```
+
+Nếu dự án dùng chung database với backend mobile (theo tài liệu dự án), cấu hình:
+
+```bash
+heroku config:set DATABASE_URL="<chuoi-ket-noi-postgres>" --app <ten-app>
+```
+
+Ghi chú:
+- Không đưa chuỗi kết nối chứa mật khẩu vào file báo cáo công khai.
+
+4.3. Khai báo process (Procfile)
+
+Dự án đã có `Procfile`:
+- `web: node server.js`
+
+Heroku sẽ tự động đọc `Procfile` khi deploy.
+
+4.4. Deploy source code lên Heroku
+
+Cách A (thường dùng): deploy bằng Git (remote heroku)
+
+```bash
+cd /home/vanh/doan/ev-swap-admin
+
+# Khởi tạo git nếu cần
+git init
+
+# Thêm remote heroku (nếu heroku create đã tạo remote, bước này có thể không cần)
+heroku git:remote --app <ten-app>
+
+# Deploy
+git add -A
+git commit -m "Deploy ev-swap-admin to Heroku"
+
+git push heroku main
+# hoặc: git push heroku master (tùy nhánh)
+```
+
+Cách B: kết nối GitHub và Deploy từ Heroku Dashboard
+- Vào Heroku Dashboard → Deploy → Connect to GitHub
+- Chọn repository → chọn folder hoặc cấu hình build theo app (nếu mono-repo)
+- Enable Automatic Deploys (tùy chọn)
+
+Lưu ý kỹ thuật (mono-repo):
+- Nếu repo chứa nhiều thư mục, cách dễ kiểm soát nhất là deploy trực tiếp từ 
+  thư mục `ev-swap-admin` bằng Heroku Git hoặc dùng pipeline riêng.
+
+4.5. Kiểm tra trạng thái dyno và log
+
+```bash
+# Xem process/dyno
+heroku ps --app <ten-app>
+
+# Xem log realtime
+heroku logs --tail --app <ten-app>
+```
+
+Các dấu hiệu thành công:
+- Dyno `web` ở trạng thái `up`
+- Log có thông báo server listening (hoặc tương đương)
+- Log kết nối PostgreSQL thành công (nếu có)
+
+
+5. KIỂM THỬ SAU TRIỂN KHAI (POST-DEPLOY VERIFICATION)
+
+5.1. Kiểm thử truy cập giao diện
+
+Truy cập URL Heroku:
+- `GET /` → trang đăng nhập (SignIn)
+- `GET /Controller` → dashboard
+- `GET /Station` → quản lý trạm
+- `GET /Battery` → quản lý pin
+- `GET /CustomerManager` → quản lý khách hàng
+- `GET /Feedback` → quản lý phản hồi
+- `GET /ForgetPassword` → quên mật khẩu
+
+5.2. Kiểm thử luồng đăng nhập
+
+- Gửi `POST /login` với username/password
+- Kỳ vọng trả về JSON `{ success: true, ... }` nếu hợp lệ
+- Nếu sai mật khẩu, trả về mã lỗi và message phù hợp
+
+5.3. Kiểm thử tác vụ cơ sở dữ liệu
+
+- Mở trang Station/Battery → thực hiện tải bảng dữ liệu
+- Thực hiện CRUD (thêm/sửa/xoá) và kiểm chứng dữ liệu cập nhật trên DB
+
+
+6. VẬN HÀNH VÀ BẢO TRÌ
+
+6.1. Giám sát
+
+- Theo dõi logs với `heroku logs --tail`
+- Theo dõi lỗi kết nối DB (timeout, SSL)
+- Theo dõi lỗi request (HTTP 4xx/5xx)
+
+6.2. Cấu hình bảo mật tối thiểu
+
+- Không commit secrets vào Git (DATABASE_URL, API keys)
+- Sử dụng `heroku config:set` để quản lý biến môi trường
+- Phân quyền admin trong bảng `admins` (role) để hạn chế truy cập
+
+6.3. Sao lưu dữ liệu
+
+Nếu dùng Heroku Postgres:
+
+```bash
+heroku pg:backups:capture --app <ten-app>
+heroku pg:backups:download --app <ten-app>
+```
+
+
+7. SỰ CỐ THƯỜNG GẶP VÀ CÁCH KHẮC PHỤC
+
+7.1. Lỗi R10 (Boot timeout) / app không lên
+
+Nguyên nhân thường gặp:
+- Không có `Procfile` hoặc `start` script sai
+- Server không lắng nghe `process.env.PORT`
+
+Hướng xử lý:
+- Kiểm tra `Procfile` có `web: node server.js`
+- Kiểm tra code `server.js` phải `app.listen(process.env.PORT || 3000, ...)`
+- Xem log: `heroku logs --tail --app <ten-app>`
+
+7.2. Lỗi kết nối PostgreSQL
+
+Dấu hiệu:
+- Log báo lỗi `ECONNRESET`, `SSL required`, hoặc `password authentication failed`
+
+Hướng xử lý:
+- Kiểm tra `DATABASE_URL` đúng
+- Kiểm tra SSL config (Heroku thường yêu cầu SSL)
+- Kiểm tra quyền truy cập DB và network policy
+
+7.3. Lỗi file upload (Multer)
+
+Dấu hiệu:
+- Upload thành công nhưng file mất sau khi restart
+
+Nguyên nhân:
+- Filesystem của Heroku là ephemeral (không lưu trữ bền vững)
+
+Hướng xử lý:
+- Chuyển file upload sang dịch vụ lưu trữ ngoài (S3, Cloudinary, ...) nếu cần
+- Hoặc chỉ dùng upload tạm thời để import Excel rồi xóa
+
+
+8. KẾT LUẬN
+
+Việc triển khai `ev-swap-admin` lên Heroku đạt mục tiêu đưa website quản trị vào 
+môi trường production với quy trình đơn giản, phù hợp cho đồ án tốt nghiệp. 
+Heroku hỗ trợ PaaS giúp giảm gánh nặng cấu hình server, tập trung vào phát triển 
+tính năng và vận hành.
+
+Các yếu tố then chốt để deploy thành công:
+- Khai báo đúng `Procfile` cho process `web`
+- Thiết lập `DATABASE_URL` và SSL cho PostgreSQL
+- Theo dõi logs để xử lý lỗi nhanh
+- Nhận thức hạn chế filesystem của Heroku với chức năng upload
+
+================================================================================
+HẾT
+================================================================================

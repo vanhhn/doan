@@ -48,6 +48,11 @@ const HistoryScreen: React.FC = () => {
   if (transactions.length === 0 && !isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            Lịch sử giao dịch
+          </Text>
+        </View>
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             {t("history.noHistory")}
@@ -59,6 +64,11 @@ const HistoryScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Lịch sử giao dịch
+        </Text>
+      </View>
       <FlatList
         data={transactions.map((transaction, index) => {
           const date = new Date(transaction.date);
@@ -92,6 +102,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: Spacing.xl,
+  },
+  header: {
+    padding: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  headerTitle: {
+    fontSize: FontSizes.xxl,
+    fontWeight: FontWeights.bold,
   },
   listContent: {
     padding: Spacing.md,

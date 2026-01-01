@@ -7,13 +7,86 @@ exports.register = async (req, res) => {
   try {
     const { username, password, fullName, phone, email } = req.body;
 
-    // Validate input
+    // ===== VALIDATION DỮ LIỆU ĐẦU VÀO =====
+
+    // 1. Kiểm tra trường bắt buộc
     if (!username || !password || !fullName) {
       return res.status(400).json({
         success: false,
         message: "Username, password và tên đầy đủ là bắt buộc.",
       });
     }
+
+    // 2. Validate username
+    const usernameRegex = /^[a-zA-Z0-9_]{3,50}$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Username phải từ 3-50 ký tự, chỉ chứa chữ cái, số và dấu gạch dưới.",
+      });
+    }
+
+    // 3. Validate password
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu phải có ít nhất 6 ký tự.",
+      });
+    }
+
+    if (password.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu không được vượt quá 100 ký tự.",
+      });
+    }
+
+    // 4. Validate fullName
+    if (fullName.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Tên đầy đủ phải có ít nhất 2 ký tự.",
+      });
+    }
+
+    if (fullName.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Tên đầy đủ không được vượt quá 100 ký tự.",
+      });
+    }
+
+    // 5. Validate phone (nếu có)
+    if (phone) {
+      const phoneRegex = /^[0-9]{10}$/;
+      if (!phoneRegex.test(phone)) {
+        return res.status(400).json({
+          success: false,
+          message: "Số điện thoại không hợp lệ. Phải là 10 chữ số.",
+        });
+      }
+    }
+
+    // 6. Validate email (nếu có)
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Email không hợp lệ.",
+        });
+      }
+
+      if (email.length > 100) {
+        return res.status(400).json({
+          success: false,
+          message: "Email không được vượt quá 100 ký tự.",
+        });
+      }
+    }
+
+    // ===== KIỂM TRA TÍNH DUY NHẤT TRONG DATABASE =====
 
     // Kiểm tra username đã tồn tại
     const existingUser = await prisma.customer.findUnique({
@@ -58,14 +131,14 @@ exports.register = async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Tạo user mới
+    // Tạo user mới với dữ liệu đã được validate
     const newCustomer = await prisma.customer.create({
       data: {
-        username,
+        username: username.trim(),
         passwordHash,
-        fullName,
-        phone: phone || null,
-        email: email || null,
+        fullName: fullName.trim(),
+        phone: phone ? phone.trim() : null,
+        email: email ? email.trim().toLowerCase() : null,
       },
       select: {
         id: true,
@@ -84,6 +157,16 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.error("Register error:", error);
+
+    // Xử lý lỗi unique constraint từ database
+    if (error.code === "P2002") {
+      const field = error.meta?.target?.[0] || "trường";
+      return res.status(409).json({
+        success: false,
+        message: `${field} đã được sử dụng.`,
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Lỗi server khi đăng ký.",
