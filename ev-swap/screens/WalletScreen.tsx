@@ -115,9 +115,7 @@ const WalletScreen = () => {
   const [amount, setAmount] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"momo" | "cash" | null>(
-    null
-  );
+  const [paymentMethod, setPaymentMethod] = useState<"momo" | null>(null);
 
   // Auto-refresh when screen gains focus
   useFocusEffect(
@@ -149,11 +147,9 @@ const WalletScreen = () => {
       return;
     }
 
+    // Hiện tại chỉ có MoMo, sau này có thể thêm VNPay, ZaloPay, v.v.
     if (paymentMethod === "momo") {
       handleMoMoPayment(amountValue);
-    } else {
-      // Cash payment (for demo)
-      handleCashPayment(amountValue);
     }
   };
 
@@ -180,10 +176,10 @@ const WalletScreen = () => {
         if (deeplink) {
           try {
             console.log("🚀 Attempting to open MoMo app with deeplink...");
-            
+
             // Thử mở deeplink trực tiếp (không cần check canOpenURL)
             await Linking.openURL(deeplink);
-            
+
             console.log("✅ Successfully opened MoMo app!");
 
             // Auto-polling để check payment status mỗi 2 giây
@@ -224,8 +220,11 @@ const WalletScreen = () => {
               }
             }, 2000); // Poll mỗi 2 giây
           } catch (error) {
-            console.error("❌ Cannot open deeplink, fallback to WebView:", error);
-            
+            console.error(
+              "❌ Cannot open deeplink, fallback to WebView:",
+              error
+            );
+
             // Fallback: Sử dụng WebView nếu không mở được deeplink
             navigation.navigate("MoMoPayment", {
               paymentUrl: paymentUrl,
@@ -251,32 +250,6 @@ const WalletScreen = () => {
     } catch (error) {
       console.error("MoMo payment error:", error);
       Alert.alert(t("common.error"), t("common.momoPaymentGeneralError"));
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleCashPayment = async (amountValue: number) => {
-    setIsProcessing(true);
-    try {
-      const response = await customerAPI.topUpBalance(amountValue);
-
-      if (response.success) {
-        setShowSuccess(true);
-        await refetchProfile();
-
-        setTimeout(() => {
-          setModalType(null);
-          setShowSuccess(false);
-          setAmount("");
-          setPaymentMethod(null);
-        }, 2000);
-      } else {
-        Alert.alert("Lỗi", response.message || "Không thể nạp tiền");
-      }
-    } catch (error) {
-      console.error("Top up error:", error);
-      Alert.alert("Lỗi", "Có lỗi xảy ra khi nạp tiền");
     } finally {
       setIsProcessing(false);
     }
@@ -529,6 +502,7 @@ const WalletScreen = () => {
                     Phương thức thanh toán
                   </Text>
 
+                  {/* MoMo Payment Option */}
                   <TouchableOpacity
                     onPress={() => setPaymentMethod("momo")}
                     style={[
@@ -588,69 +562,7 @@ const WalletScreen = () => {
                     </View>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    onPress={() => setPaymentMethod("cash")}
-                    style={[
-                      styles.paymentOption,
-                      {
-                        backgroundColor: isDark
-                          ? Colors.dark.background
-                          : "#F3F4F6",
-                        borderColor:
-                          paymentMethod === "cash"
-                            ? isDark
-                              ? Colors.dark.primary
-                              : Colors.light.primary
-                            : isDark
-                            ? "#4B5563"
-                            : "#D1D5DB",
-                        borderWidth: 2,
-                      },
-                    ]}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.paymentOptionContent}>
-                      <View
-                        style={[
-                          styles.momoLogo,
-                          { backgroundColor: "#10B981" },
-                        ]}
-                      >
-                        <Text style={styles.momoLogoText}>💵</Text>
-                      </View>
-                      <View style={styles.paymentOptionInfo}>
-                        <Text
-                          style={[
-                            styles.paymentOptionTitle,
-                            {
-                              color: isDark
-                                ? Colors.dark.onSurface
-                                : Colors.light.onSurface,
-                            },
-                          ]}
-                        >
-                          Tiền mặt (Demo)
-                        </Text>
-                        <Text
-                          style={[
-                            styles.paymentOptionDesc,
-                            {
-                              color: isDark
-                                ? Colors.dark.textSecondary
-                                : Colors.light.textSecondary,
-                            },
-                          ]}
-                        >
-                          Nạp tiền trực tiếp
-                        </Text>
-                      </View>
-                      {paymentMethod === "cash" && (
-                        <View style={styles.checkmark}>
-                          <Text style={styles.checkmarkText}>✓</Text>
-                        </View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
+                  {/* Có thể thêm VNPay, ZaloPay, v.v. ở đây sau này */}
                 </View>
               </>
             )}

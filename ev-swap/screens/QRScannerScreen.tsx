@@ -37,8 +37,6 @@ const QRScannerScreen = () => {
   const [scanning, setScanning] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
-  const [showManualInput, setShowManualInput] = useState(false);
-  const [manualStationId, setManualStationId] = useState("");
 
   // Request camera permission
   useEffect(() => {
@@ -49,19 +47,6 @@ const QRScannerScreen = () => {
       }
     })();
   }, []);
-
-  // Simulate QR scan for web/development
-  const handleManualInput = () => {
-    setShowManualInput(true);
-  };
-
-  const handleManualSubmit = () => {
-    if (manualStationId) {
-      handleQRCodeScanned(`STATION_${manualStationId}`);
-      setShowManualInput(false);
-      setManualStationId("");
-    }
-  };
 
   const handleBarcodeScanned = ({ data }: { data: string }) => {
     if (!scanned) {
@@ -287,22 +272,6 @@ const QRScannerScreen = () => {
           </View>
 
           <TouchableOpacity
-            style={[
-              styles.scanButton,
-              {
-                backgroundColor: isDark
-                  ? Colors.dark.primary
-                  : Colors.light.primary,
-              },
-            ]}
-            onPress={handleManualInput}
-          >
-            <Text style={styles.scanButtonText}>
-              ⌨️ {t("qrScanner.manualInput")}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={styles.cancelButton}
             onPress={() => navigation.goBack()}
           >
@@ -319,135 +288,6 @@ const QRScannerScreen = () => {
               {t("qrScanner.cancel")}
             </Text>
           </TouchableOpacity>
-
-          {/* QR Code Examples */}
-          <View style={styles.examplesContainer}>
-            <Text
-              style={[
-                styles.examplesTitle,
-                {
-                  color: isDark
-                    ? Colors.dark.textSecondary
-                    : Colors.light.textSecondary,
-                },
-              ]}
-            >
-              {t("qrScanner.examples")}
-            </Text>
-            {[1, 2, 3, 4, 5, 6].map((id) => (
-              <TouchableOpacity
-                key={id}
-                style={[
-                  styles.exampleButton,
-                  {
-                    backgroundColor: isDark
-                      ? Colors.dark.surface
-                      : Colors.light.surface,
-                  },
-                ]}
-                onPress={() => handleQRCodeScanned(`STATION_${id}`)}
-              >
-                <Text
-                  style={[
-                    styles.exampleText,
-                    {
-                      color: isDark
-                        ? Colors.dark.onSurface
-                        : Colors.light.onSurface,
-                    },
-                  ]}
-                >
-                  📍 {t("qrScanner.station")} {id}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Manual Input Modal */}
-          <Modal
-            visible={showManualInput}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setShowManualInput(false)}
-          >
-            <View style={styles.modalOverlay}>
-              <View
-                style={[
-                  styles.modalContent,
-                  {
-                    backgroundColor: isDark
-                      ? Colors.dark.surface
-                      : Colors.light.surface,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.modalTitle,
-                    {
-                      color: isDark
-                        ? Colors.dark.onSurface
-                        : Colors.light.onSurface,
-                    },
-                  ]}
-                >
-                  {t("qrScanner.enterStationId")}
-                </Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: isDark
-                        ? Colors.dark.background
-                        : Colors.light.background,
-                      borderColor: isDark
-                        ? Colors.dark.border
-                        : Colors.light.border,
-                      color: isDark ? Colors.dark.text : Colors.light.text,
-                    },
-                  ]}
-                  placeholder={t("qrScanner.enterIdPlaceholder")}
-                  placeholderTextColor={
-                    isDark
-                      ? Colors.dark.textSecondary
-                      : Colors.light.textSecondary
-                  }
-                  value={manualStationId}
-                  onChangeText={setManualStationId}
-                  keyboardType="number-pad"
-                />
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.modalCancelButton]}
-                    onPress={() => {
-                      setShowManualInput(false);
-                      setManualStationId("");
-                    }}
-                  >
-                    <Text style={styles.modalCancelText}>
-                      {t("qrScanner.cancel")}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.modalButton,
-                      styles.modalSubmitButton,
-                      {
-                        backgroundColor: isDark
-                          ? Colors.dark.primary
-                          : Colors.light.primary,
-                      },
-                    ]}
-                    onPress={handleManualSubmit}
-                  >
-                    <Text style={styles.modalSubmitText}>
-                      {t("qrScanner.confirm")}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
         </View>
       </View>
     );
@@ -518,21 +358,6 @@ const QRScannerScreen = () => {
             {t("qrScanner.permissionMessage")}
           </Text>
           <TouchableOpacity
-            style={[
-              styles.scanButton,
-              {
-                backgroundColor: isDark
-                  ? Colors.dark.primary
-                  : Colors.light.primary,
-              },
-            ]}
-            onPress={handleManualInput}
-          >
-            <Text style={styles.scanButtonText}>
-              ⌨️ {t("qrScanner.manualInput")}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
             style={styles.cancelButton}
             onPress={() => navigation.goBack()}
           >
@@ -588,30 +413,6 @@ const QRScannerScreen = () => {
           </View>
 
           <View style={styles.footer}>
-            <TouchableOpacity
-              style={[
-                styles.manualButton,
-                {
-                  backgroundColor: isDark
-                    ? Colors.dark.surface
-                    : Colors.light.surface,
-                },
-              ]}
-              onPress={handleManualInput}
-            >
-              <Text
-                style={[
-                  styles.manualButtonText,
-                  {
-                    color: isDark
-                      ? Colors.dark.onSurface
-                      : Colors.light.onSurface,
-                  },
-                ]}
-              >
-                ⌨️ {t("qrScanner.manualInput")}
-              </Text>
-            </TouchableOpacity>
             {scanned && (
               <TouchableOpacity
                 style={[
@@ -631,92 +432,6 @@ const QRScannerScreen = () => {
             )}
           </View>
         </View>
-
-        {/* Manual Input Modal */}
-        <Modal
-          visible={showManualInput}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowManualInput(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View
-              style={[
-                styles.modalContent,
-                {
-                  backgroundColor: isDark
-                    ? Colors.dark.surface
-                    : Colors.light.surface,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.modalTitle,
-                  {
-                    color: isDark
-                      ? Colors.dark.onSurface
-                      : Colors.light.onSurface,
-                  },
-                ]}
-              >
-                {t("qrScanner.enterStationId")}
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: isDark
-                      ? Colors.dark.background
-                      : Colors.light.background,
-                    borderColor: isDark
-                      ? Colors.dark.border
-                      : Colors.light.border,
-                    color: isDark ? Colors.dark.text : Colors.light.text,
-                  },
-                ]}
-                placeholder={t("qrScanner.enterIdPlaceholder")}
-                placeholderTextColor={
-                  isDark
-                    ? Colors.dark.textSecondary
-                    : Colors.light.textSecondary
-                }
-                value={manualStationId}
-                onChangeText={setManualStationId}
-                keyboardType="number-pad"
-              />
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalCancelButton]}
-                  onPress={() => {
-                    setShowManualInput(false);
-                    setManualStationId("");
-                  }}
-                >
-                  <Text style={styles.modalCancelText}>
-                    {t("qrScanner.cancel")}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.modalButton,
-                    styles.modalSubmitButton,
-                    {
-                      backgroundColor: isDark
-                        ? Colors.dark.primary
-                        : Colors.light.primary,
-                    },
-                  ]}
-                  onPress={handleManualSubmit}
-                >
-                  <Text style={styles.modalSubmitText}>
-                    {t("qrScanner.confirm")}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
       </View>
     );
   }
