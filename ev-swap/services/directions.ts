@@ -3,7 +3,7 @@ import { Platform, Linking } from "react-native";
 
 const GOOGLE_MAPS_API_KEY =
   Constants.expoConfig?.android?.config?.googleMaps?.apiKey ||
-  "AIzaSyApB47DdUIOvYUPb6tNF5fQf93H5d1p0Uo"; // Fallback API key
+  "YOUR_GOOGLE_MAPS_API_KEY"; // Fallback API key - Replace with your actual key
 
 export interface DirectionsResult {
   distance: string; // e.g., "5.2 km"
